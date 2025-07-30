@@ -1,0 +1,40 @@
+
+## Discussion
+
+In this study, we developed and validated an interpretable, feature‐based pipeline for distinguishing 30‑second piano clips as either human‑composed or AI‑generated. Beginning with a balanced corpus of 722 clips and an initial set of ≈ 55 acoustic descriptors, we honed in on a concise subset of ten features that consistently emerged as most predictive across Random Forest Gini importance, permutation importance, and L1‑penalized logistic regression. Our enhanced stacking classifier, which integrates pairwise interaction terms and a calibrated logistic meta‐learner, achieved **82.1 % accuracy** and **0.924 ROC‑AUC** on a held‑out test set, outperforming each individual base learner and a simple soft‑voting ensemble.
+
+### 1. Acoustic Hallmarks of “Humanness”
+
+Across both statistical tests (ANOVA, Welch’s t‑tests) and model‐based rankings, **spectral\_bandwidth\_mean**, **tempo\_std**, and **chroma\_stft\_mean** consistently ranked at the top.
+
+* **Spectral bandwidth** reflects the spread of energy across frequencies; human performances tend to exhibit a characteristic balance between narrow focus (for clarity) and sufficient breadth (for richness of tone).
+* **Tempo variability** (tempo\_std) captures expressive micro‑rubato: humans naturally fluctuate in rhythm, whereas many AI generators produce overly steady tempi.
+* **Chroma balance** (chroma\_stft\_mean) quantifies harmonic center of mass; subtle tonal biases in human performances differ from those in algorithmic outputs.
+
+These features collectively illuminate what makes piano sound “human” at a signal level: nuanced dynamic fluctuations, expressive timing, and characteristic spectral–harmonic textures.
+
+### 2. Error Analysis Insights
+
+Our confusion matrix and misclassification review (Section 6) revealed two principal error modes:
+
+1. **AI → Human (False Negatives):** AI clips with unusually low onset rates (1.8–6.4 onsets/sec) but very wide spectral bandwidths (> 700 Hz) were often labeled “Human.” In these cases, the temporal cue of sparse, rubato‐like note placement outweighed spectral anomalies.
+2. **Human → AI (False Positives):** Some genuine performances with exceptionally steady tempi (tempo\_std < 60 bpm) or middling chroma balance (≈ 0.28) resembled AI outputs, leading to misclassification.
+
+These patterns suggest the model’s decision boundary can swing too heavily on either spectral or temporal extremes. In practice, this means overly steady human clips risk being “flagged” as AI, while expressive AI outputs may slip through as “human.”
+
+### 3. Limitations
+
+* **Sample size and scope:** With 722 clips focused solely on solo piano, our findings may not generalize to other instruments, ensemble textures, or longer pieces.
+* **Feature coverage:** While our 10‑feature subset captures many key acoustic cues, it omits higher‑order temporal dynamics (e.g. autocorrelation of inter‐onset intervals), pedaling artifacts, and long‑range structure—dimensions where human nuance may further diverge from AI.
+* **Model complexity vs. explainability:** Though our stacking classifier maximized performance, its added complexity (interaction terms, meta‐learner) comes at the cost of some interpretability compared to a single logistic regression.
+
+### 4. Future Directions
+
+1. **Expand modalities:** Incorporate MIDI/symbolic representations to capture note‐level patterns (e.g. voice‐leading, chord progressions) alongside audio features.
+2. **Advance temporal modeling:** Extract features like onset‐interval autocorrelation, dynamic contour metrics, or beat‐synchronous energy flows to better characterize rubato and phrasing.
+3. **Hybrid deep–feature approaches:** Combine our interpretable descriptors with lightweight neural embeddings (e.g. timbral autoencoders) to capture subtler spectral artifacts.
+4. **Broader evaluation:** Test the pipeline on unseen AI generators or “in the wild” streaming data, and adopt nested cross‐validation to guard against overfitting.
+
+### 5. Conclusion
+
+Our work demonstrates that a carefully selected set of ten signal‐level descriptors can reliably differentiate human and AI piano clips, and that combining these features via an enhanced stacking model yields robust detection performance (82 % accuracy, 0.924 AUC). Beyond blind classification, the identified acoustic hallmarks: spectral bandwidth, tempo variability, chroma balance, and related features, which offer concrete insights into what makes piano music feel and sound human. As AI music generation continues to evolve, these findings provide a transparent foundation for automated content‐authorship verification, helping maintain listener trust and fair recognition for human artists.
