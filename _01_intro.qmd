@@ -1,3 +1,22 @@
-# Introduction
+## Introduction
 
-Something something, and then I state some citable facts [@Zelner2022].
+The rapid advancement of generative models has made it possible to compose convincing piano pieces in seconds, raising important questions about authenticity, disclosure, and the livelihoods of human performers. At present, commercial streaming services lack reliable, scalable methods to distinguish machine‑generated music from human performances, which may erode listener trust and disadvantage living composers.
+
+A compelling example occurred in June 2025, when “The Velvet Sundown”, a ’60s‑style album entirely produced by AI, climbed to the top of Spotify’s Viral 50 playlist with over 700,000 monthly listeners, only revealing its nonhuman origin after widespread media coverage on July 5. Such incidents underscore the need for automated, transparent detection tools.
+
+**Research question:**  
+Can a reproducible, feature‑based classifier, built on standard audio descriptors, reliably label 30‑second solo piano excerpts as either AI‑generated or human‑played?
+
+To explore this, we:
+
+1. Assembled a balanced dataset of 30‑second piano clips from public‑domain human performances (FMA, Musopen) and leading AI systems (AIVA, MuseNet, Udio, and two emergent models).  
+2. Standardized all audio to 44.1 kHz mono WAV at –23 LUFS to eliminate loudness and format confounds.  
+3. Extracted 55 signal‑level descriptors (temporal, spectral, harmonic, cepstral) to capture both low‑level synthesis artifacts and high‑level expressive traits.  
+4. Identified a subset of ten non‑redundant features via univariate hypothesis tests and three model‑based importance rankings.  
+5. Trained and evaluated both interpretable (L2‑penalized logistic regression) and performance‑oriented (random forest, ensemble, and an enhanced stacking classifier) models on these ten features, using 5‑fold cross‑validation and an 80/20 held‑out split.  
+
+Our aim is twofold: (1) provide a deployable blueprint for automated AI‑music detection and (2) illuminate the signal‑level qualities that define human musical expression.
+
+
+
+.
