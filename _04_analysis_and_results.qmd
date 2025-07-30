@@ -1,0 +1,426 @@
+## Analysis & Results
+
+### 1. Dataset Summary
+
+We collected a total of 722 thirty‑second piano clips, evenly split between human‑composed (n = 361) and AI‑generated (n = 361). Human clips came from FMA and Musopen across classical, jazz, and contemporary styles; AI clips came from AIVA, Udio, and three emerging generators. All source tracks exceeded 30 s, and metadata (platform, license, artist/generator) was logged for traceability.
+
+```{python}
+#| label: table1
+#| echo: false
+#| code-fold: true
+import plotly.graph_objects as go
+
+# merge Samt and Museopen into Musopen
+df.replace(
+    to_replace={r'(?i)samt': 'Musopen', r'(?i)museopen': 'Musopen'},
+    regex=True,
+    inplace=True
+)
+
+# derive platform from source_file
+df['platform'] = df.source_file.str.split('/', expand=True)[1].str.title()
+
+# human counts by platform
+human_counts = (
+    df[df.label == 0]
+      .platform
+      .value_counts()
+      .reset_index()
+)
+human_counts.columns = ['Platform', 'Human Count']
+
+# AI counts by platform
+ai_counts = (
+    df[df.label == 1]
+      .platform
+      .value_counts()
+      .reset_index()
+)
+ai_counts.columns = ['Platform', 'AI Count']
+
+# Table 1A: Human Clip Counts by Platform
+fig1a = go.Figure(data=[go.Table(
+    header=dict(values=list(human_counts.columns), fill_color='lightgrey'),
+    cells=dict(values=[human_counts[c] for c in human_counts.columns])
+)])
+fig1a.update_layout(title_text="Table 1A: Human Clip Counts by Platform")
+
+# Table 1B: AI Clip Counts by Platform
+fig1b = go.Figure(data=[go.Table(
+    header=dict(values=list(ai_counts.columns), fill_color='lightgrey'),
+    cells=dict(values=[ai_counts[c] for c in ai_counts.columns])
+)])
+fig1b.update_layout(title_text="Table 1B: AI Clip Counts by Platform")
+
+fig1a.show()
+fig1b.show()
+```
+
+
+
+---
+
+### 2. Feature Selection
+
+We evaluated all ∼55 acoustic descriptors using three complementary, model‑based importance metrics: Random Forest Gini importance, permutation importance, and the absolute values of L1‑penalized logistic regression coefficients. We then selected the ten features that appeared in the top 10 of all three methods, while ensuring pairwise correlations remained below |r| = 0.75, to form a concise and predictive feature set.
+
+```{python}
+#| label: feat_selection_gini_fixed
+#| echo: false
+#| code-fold: true
+import pandas as pd
+import plotly.express as px
+from sklearn.ensemble import RandomForestClassifier
+
+# 1) Re-fit Random Forest on the training data using only the selected features
+rf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+rf.fit(X_train[final_feats], y_train)
+
+# 2) Construct a DataFrame of Gini importances
+imp_df = pd.DataFrame({
+    'feature': final_feats,
+    'gini':    rf.feature_importances_
+})
+
+# 3) Select the top 10 features by Gini importance
+top_n = 10
+gini_top = imp_df.sort_values('gini', ascending=False).head(top_n)
+
+# 4) Plot as a horizontal bar chart
+fig2a = px.bar(
+    gini_top,
+    x='gini',
+    y='feature',
+    orientation='h',
+    title="Figure 2A: Top 10 Features by RF Gini Importance",
+    labels={'gini':'Gini Importance','feature':''}
+)
+fig2a.update_layout(
+    yaxis={'categoryorder':'total ascending'},
+    width=600,
+    height=400
+)
+fig2a.show()
+
+```
+
+```{python}
+#| label: feat_selection_perm_fixed
+#| echo: false
+#| code-fold: true
+import plotly.express as px
+from sklearn.inspection import permutation_importance
+
+top_n = 10
+
+perm_res = permutation_importance(
+    ensemble.named_estimators_['rf'],
+    X_test[final_feats], 
+    y_test,
+    n_repeats=20, 
+    random_state=42, 
+    scoring='accuracy'
+)
+
+perm_df = (
+    pd.DataFrame({
+        'feature': final_feats,
+        'perm':    perm_res.importances_mean
+    })
+    .sort_values('perm', ascending=False)
+    .head(top_n)
+)
+
+fig2b = px.bar(
+    perm_df,
+    x='perm',
+    y='feature',
+    orientation='h',
+    title="Figure 2B: Top 10 Features by Permutation Importance",
+    labels={'perm':'Mean Decrease in Accuracy','feature':''}
+)
+fig2b.update_layout(yaxis={'categoryorder':'total ascending'}, width=600, height=400)
+fig2b.show()
+```
+
+```{python}
+#| label: feat_selection_l1_fixed
+#| echo: false
+#| code-fold: true
+import numpy as np
+import pandas as pd
+import plotly.express as px
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
+# Fit L1-penalized logistic regression on your training split
+pipe_l1 = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', LogisticRegression(penalty='l1', solver='liblinear', random_state=42))
+])
+pipe_l1.fit(X_train[final_feats], y_train)
+
+# Build a DataFrame of absolute coefficients
+imp_l1_df = pd.DataFrame({
+    'feature': final_feats,
+    'l1':       np.abs(pipe_l1.named_steps['clf'].coef_[0])
+})
+
+# Take top 10 by magnitude and plot
+l1_top = imp_l1_df.sort_values('l1', ascending=False).head(10)
+
+fig2c = px.bar(
+    l1_top,
+    x='l1', y='feature',
+    orientation='h',
+    title="Figure 2C: Top 10 Features by |L1 Logistic Coefficient|",
+    labels={'l1':'|Coefficient|','feature':''}
+)
+fig2c.update_layout(
+    yaxis={'categoryorder':'total ascending'},
+    width=600, height=400
+)
+fig2c.show()
+
+```
+
+---
+
+### 3. Correlation Structure & Dimensionality
+
+A Pearson correlation heatmap of our ten selected features confirms that all but one pair fall below |r| = 0.7. The only exception is **spectral\_bandwidth\_mean** vs. **spectral\_centroid\_mean** (r = 0.73), which we retained given their distinct acoustic interpretations.
+
+A subsequent PCA on these ten features shows that PC1 explains 22.8 % of the variance, PC2 explains 15.1 %, and PC3 explains 11.9 % (49.8 % cumulative). The PC1 vs. PC2 scatterplot (Figure 3) further reveals partial class separation: AI‑generated clips generally score higher on PC1 than human‑composed clips, though some overlap remains.
+
+```{python}
+#| label: fig2
+#| echo: false
+#| code-fold: true
+import numpy as np
+import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import plotly.express as px
+
+# Correlation heatmap
+corr_sel = df[final_feats].corr()
+fig2 = px.imshow(
+    corr_sel,
+    text_auto=".2f",
+    zmin=-1, zmax=1,
+    color_continuous_scale='RdBu_r',
+    title="Figure 2: Correlation Heatmap of Selected Features",
+    labels={'x':'Feature','y':'Feature','color':'Pearson r'}
+)
+fig2.update_layout(xaxis_tickangle=45, width=600, height=600)
+fig2.show()
+
+# PCA explained variance
+X_scaled = StandardScaler().fit_transform(df[final_feats])
+pca = PCA(n_components=3).fit(X_scaled)
+exp = pca.explained_variance_ratio_ * 100
+print(f"PC1: {exp[0]:.1f}%, PC2: {exp[1]:.1f}%, PC3: {exp[2]:.1f}%")
+print(f"Cumulative PC1–PC3: {exp[:3].sum():.1f}%")
+
+# PCA scatter
+pcs = pca.transform(X_scaled)[:, :2]
+pcdf = pd.DataFrame({
+    'PC1': pcs[:, 0],
+    'PC2': pcs[:, 1],
+    'Class': df.label.map({0: 'Human', 1: 'AI'})
+})
+
+fig3 = px.scatter(
+    pcdf, x='PC1', y='PC2', color='Class',
+    title="Figure 3: PCA Scatterplot of Selected Features",
+    labels={'PC1':'PC 1','PC2':'PC 2'}
+)
+fig3.update_layout(width=700, height=500)
+fig3.show()
+```
+
+---
+
+### 4. Univariate Testing on Selected Features
+
+#### 4.1 One‑way ANOVA & Tukey HSD
+
+All ten features yielded highly significant group differences (p < 0.001), with the largest F‑statistics for **spectral\_bandwidth\_mean**, **tempo\_std**, and **chroma\_stft\_mean**. Post‑hoc Tukey HSD (95 % CIs) confirms these differences.
+
+```{=latex}
+\begin{table}[ht]
+\centering
+\caption{One‑way ANOVA F‑statistics and Tukey HSD 95\% CIs for the ten selected features.}
+\label{tab:anova}
+\begin{tabular}{lrrrr}
+\toprule
+Feature & F & p‑value & CI lower & CI upper \\
+\midrule
+spectral\_bandwidth\_mean   & 81.57 & 0.0000 & -424.63 & -272.99 \\
+tempo\_std                  & 56.56 & 0.0000 &  -69.29 &  -40.61 \\
+chroma\_stft\_mean          & 51.34 & 0.0000 &   -0.03 &   -0.02 \\
+onset\_rate                 & 39.44 & 0.0000 &    0.47 &    0.89 \\
+mfcc\_3\_mean               & 24.25 & 0.0000 &   -9.32 &   -4.01 \\
+spectral\_centroid\_mean    & 22.29 & 0.0000 & -144.58 &  -59.65 \\
+mfcc\_5\_mean               & 13.43 & 0.0003 &    0.87 &    2.87 \\
+tonnetz\_3\_mean            & 13.17 & 0.0003 &    0.02 &    0.06 \\
+tonnetz\_6\_mean            & 11.93 & 0.0006 &   -0.02 &   -0.00 \\
+mfcc\_delta2\_13\_mean      & 10.07 & 0.0016 &    0.00 &    0.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
+
+#### 4.2 Welch’s t‑Tests & Cohen’s d
+
+After Bonferroni correction (α<sub>bonf</sub>=0.005), all ten remained significant. The largest effects were for **spectral\_bandwidth\_mean**, **tempo\_std**, and **chroma\_stft\_mean**.
+
+```{=latex}
+\begin{table}[ht]
+\centering
+\caption{Welch’s t‑tests, Bonferroni‑corrected p‑values, and Cohen’s $d$.}
+\label{tab:welch}
+\begin{tabular}{lrrrrr}
+\toprule
+Feature & $t$‑stat & p‑value & p‑value (Bonf) & Cohen’s $d$ \\
+\midrule
+spectral\_bandwidth\_mean &  9.032 & 0.0000 & 0.0000 & 0.672 \\
+tempo\_std                &  7.521 & 0.0000 & 0.0000 & 0.560 \\
+chroma\_stft\_mean        &  7.165 & 0.0000 & 0.0000 & 0.533 \\
+onset\_rate               & -6.280 & 0.0000 & 0.0000 & 0.467 \\
+mfcc\_3\_mean             &  4.925 & 0.0000 & 0.0000 & 0.367 \\
+spectral\_centroid\_mean  &  4.721 & 0.0000 & 0.0000 & 0.351 \\
+mfcc\_5\_mean             & -3.664 & 0.0003 & 0.0027 & 0.273 \\
+tonnetz\_3\_mean          & -3.629 & 0.0003 & 0.0031 & 0.270 \\
+tonnetz\_6\_mean          &  3.454 & 0.0006 & 0.0058 & 0.257 \\
+mfcc\_delta2\_13\_mean    & -3.173 & 0.0016 & 0.0157 & 0.236 \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
+
+---
+
+### 5. Model Performance
+
+We evaluated four base learners: tuned logistic regression, tuned random forest, tuned gradient boosting, and Gaussian Naïve Bayes, and a soft‑voting ensemble, all on our ten selected features under an 80/20 stratified split. We then assessed an enhanced stacking model that incorporates pairwise interaction terms and a logistic‑regression meta‑learner.
+
+#### 5.1 Held‑out Test Performance of Tuned Models & Ensemble
+
+```{python}
+#| label: table5_final
+#| echo: false
+import pandas as pd
+import plotly.graph_objects as go
+
+perf_df = pd.DataFrame([
+    {'Model': 'Tuned LR',               'Accuracy': 0.676, 'Precision': 0.667, 'Recall': 0.694, 'F1': 0.680, 'ROC-AUC': 0.775},
+    {'Model': 'Tuned RF',               'Accuracy': 0.834, 'Precision': 0.853, 'Recall': 0.806, 'F1': 0.829, 'ROC-AUC': 0.918},
+    {'Model': 'Tuned GB',               'Accuracy': 0.862, 'Precision': 0.851, 'Recall': 0.875, 'F1': 0.863, 'ROC-AUC': 0.919},
+    {'Model': 'Naïve Bayes',            'Accuracy': 0.697, 'Precision': 0.640, 'Recall': 0.889, 'F1': 0.744, 'ROC-AUC': 0.811},
+    {'Model': 'Soft‑Voting Ensemble',   'Accuracy': 0.828, 'Precision': 0.805, 'Recall': 0.861, 'F1': 0.832, 'ROC-AUC': 0.913}
+])
+
+fig5 = go.Figure(data=[go.Table(
+    header=dict(values=list(perf_df.columns), fill_color='lightgrey'),
+    cells=dict(values=[perf_df[col] for col in perf_df.columns])
+)])
+fig5.update_layout(
+    title_text="Table 5: Held‑out Test Performance of Tuned Models & Soft‑Voting Ensemble",
+    width=800
+)
+fig5.show()
+```
+
+#### 5.2 Enhanced Stacking Performance
+
+```{python}
+#| label: table6_stacking
+#| echo: false
+import pandas as pd
+import plotly.graph_objects as go
+
+stack_df = pd.DataFrame([{
+    'Model':    'Enhanced Stacking',
+    'Accuracy': 0.821,
+    'ROC-AUC':  0.924
+}])
+
+fig6 = go.Figure(data=[go.Table(
+    header=dict(values=list(stack_df.columns), fill_color='lightgrey'),
+    cells=dict(values=[stack_df[col] for col in stack_df.columns])
+)])
+fig6.update_layout(
+    title_text="Table 6: Held‑out Test Performance of Enhanced Stacking Model",
+    width=500
+)
+fig6.show()
+```
+
+The stacking model achieves **82.1 % accuracy** and **0.924 ROC‑AUC**, surpassing each individual learner and the soft‑voting ensemble.
+
+
+
+### 6. Model Evaluation & Error Analysis
+
+To assess where our enhanced stacking model succeeds and where it falls short, we inspect its confusion matrix, per‑class performance, and representative misclassified examples.
+
+```{python}
+#| label: model_evaluation
+#| echo: false
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
+
+# Transform test data and predict
+X_test_int = interact.transform(X_test)
+y_true = y_test.reset_index(drop=True)
+y_pred = stack.predict(X_test_int)
+
+# Confusion matrix
+cm = confusion_matrix(y_true, y_pred)
+disp = ConfusionMatrixDisplay(cm, display_labels=['Human','AI'])
+plt.figure(figsize=(5,4))
+disp.plot(ax=plt.gca(), cmap='Blues')
+plt.title("Confusion Matrix – Enhanced Stacking")
+plt.show()
+
+# Classification report
+print(classification_report(y_true, y_pred, target_names=['Human','AI']))
+```
+
+* **Accuracy:** 82.1 %
+* **Human:** precision 84 %, recall 79 % (F₁ 0.82)
+* **AI:** precision 80 %, recall 85 % (F₁ 0.82)
+
+```{python}
+#| label: error_examples
+#| echo: false
+# Identify misclassifications
+fn_idx = np.where((y_true == 1) & (y_pred == 0))[0]  # AI→Human
+fp_idx = np.where((y_true == 0) & (y_pred == 1))[0]  # Human→AI
+
+# Prepare DataFrame of original selected features
+df_test_sel = pd.DataFrame(X_test, columns=final_feats).reset_index(drop=True)
+
+# Top 5 false negatives
+df_fn = df_test_sel.loc[fn_idx[:5]].copy()
+df_fn['True'] = y_true.iloc[fn_idx[:5]].values
+df_fn['Pred'] = y_pred[fn_idx[:5]]
+print("Top 5 False Negatives (AI→Human):")
+display(df_fn)
+
+# Top 5 false positives
+df_fp = df_test_sel.loc[fp_idx[:5]].copy()
+df_fp['True'] = y_true.iloc[fp_idx[:5]].values
+df_fp['Pred'] = y_pred[fp_idx[:5]]
+print("Top 5 False Positives (Human→AI):")
+display(df_fp)
+```
+
+* **False negatives (Predicted AI but were actually human):** low **onset\_rate** (1.8–6.4 onsets/sec) with very wide **spectral\_bandwidth\_mean** (> 700 Hz).
+* **False positives (Predicted Human but were actually AI):** very low **tempo\_std** (< 60 bpm) or mid‑range **chroma\_stft\_mean** (\~0.28).
+
+These patterns pinpoint where the model’s boundary is most ambiguous, guiding future refinements. 
