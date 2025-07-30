@@ -1,1 +1,8 @@
-# Background
+## Background
+
+
+Differentiating AI‑generated from human‑composed music has attracted both perceptual and computational research. Perceptual studies (e.g., Collins et al., 2023; Sarmento et al., 2024) report that listeners struggle to distinguish AI outputs yet consistently prefer human performances. Computational approaches, ranging from CNN‑based “deepfake” detectors on spectrograms (Afchar et al., 2025; Vernet et al., 2025) to transformer encoders (Independent Project, 2022), have achieved high accuracies (≥ 95 %), but often lack transparency and may not generalize to new models.
+
+Signal‑level descriptors offer a more interpretable alternative. Low‑level features like MFCCs and spectral centroids capture timbral fingerprints of synthesis (Dervakos et al., 2021), while temporal metrics (tempo variability, onset rates) reflect expressive rubato in human playing (Flexer et al., 2006; Sarmento et al., 2024). Harmonic descriptors (Tonnetz axes, chroma balances) quantify tonal structure, and statistical summaries (e.g., spectral bandwidth) trace differences in articulation and mixing. Ensemble and hybrid classifiers, combining forests, logistic models, and lightweight neural embeddings, have shown promise for robust detection (Vernet et al., 2025; Afchar et al., 2025).
+
+Building on these insights, our work focuses on a transparent, feature‑based pipeline: we extract 55 descriptors, rigorously select a non‑redundant subset of ten, and train both interpretable (logistic regression) and high‑performing (random forest, ensemble, stacking) models. This approach balances predictive accuracy with clear attribution of which acoustic hallmarks drive classification.
