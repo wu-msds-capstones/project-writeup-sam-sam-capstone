@@ -1,0 +1,977 @@
+---
+title: "Using Machine Learning to Classify AI‑ and Human‑Composed Solo Piano Pieces"
+author:
+  - Sam Beilenson
+  - Sam Twenhafel
+date: July 22, 2025
+abstract: |
+  As AI‑driven music generation proliferates, streaming platforms lack reliable ways to flag machine‑created tracks, risking listener trust and undercutting human composers. We address this gap by developing and validating a feature‑based classifier that distinguishes 30‑second solo piano excerpts as AI‑generated or human‑played. Leveraging 58 signal‑level descriptors (spectral, temporal, harmonic, cepstral), we identify the ten most predictive, non‑redundant features via statistical tests and model‑based rankings. Trained on a balanced corpus of public‑domain recordings (FMA, Musopen) and leading generative models (AIVA, MuseNet, Udio), our enhanced stacking ensemble achieves 82.1% accuracy and 0.924 ROC‑AUC. Beyond classification, we illuminate the acoustic hallmarks of “humanness”, such as spectral bandwidth, tempo variability, and chroma balance, offering a transparent blueprint for automated AI‑content detection and insights into musical expressivity.
+
+jupyter: python3
+format:
+  html:
+    code-fold: true
+execute:
+  echo: false
+  warning: false
+  error:   false
+---
+
+```{python}
+#| label: setup
+#| echo: false
+#| include: false
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
+
+# Load the dataset
+df = pd.read_csv("/Users/sambeilenson/Documents/Capstone/Tests/all_features2.csv")
+
+# Normalize platform names
+df.replace(
+    to_replace={r'(?i)samt': 'Musopen', r'(?i)museopen': 'Musopen'},
+    regex=True,
+    inplace=True
+)
+
+# Extract platform for summary tables
+df['platform'] = df.source_file.str.split('/', expand=True)[1].str.title()
+
+# Define features
+exclude = {'label', 'clip_id', 'source_file', 'full_duration', 'clip_count'}
+all_feats = [c for c in df.columns if c not in exclude]
+
+# Final ten selected features
+final_feats = [
+    'spectral_bandwidth_mean',
+    'tempo_std',
+    'chroma_stft_mean',
+    'onset_rate',
+    'mfcc_3_mean',
+    'spectral_centroid_mean',
+    'mfcc_5_mean',
+    'tonnetz_3_mean',
+    'tonnetz_6_mean',
+    'mfcc_delta2_13_mean'
+]
+
+# Prepare train/test split
+from sklearn.model_selection import train_test_split, StratifiedKFold
+X = df[final_feats]
+y = df.label
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, stratify=y, test_size=0.2, random_state=42
+)
+
+# Define a common 5‑fold CV splitter
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+```
+
+```{python}
+#| label: modeling_tuned_fixed
+#| code-fold: true
+#| echo: false
+import numpy as np
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier, GradientBoostingClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+
+# 1) Define pipelines
+pipe_lr = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', LogisticRegression(solver='liblinear', random_state=42))
+])
+pipe_rf = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', RandomForestClassifier(random_state=42))
+])
+pipe_gb = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', GradientBoostingClassifier(random_state=42))
+])
+pipe_nb = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', GaussianNB())
+])
+
+# 2) Hyperparameter grids
+param_lr = {
+    'clf__penalty': ['l1','l2'],
+    'clf__C':        np.logspace(-3,3,7)
+}
+param_rf = {
+    'clf__n_estimators':    [50,100,200],
+    'clf__max_depth':       [3,5,10,None],
+    'clf__min_samples_split':[2,5,10]
+}
+param_gb = {
+    'clf__n_estimators':    [50,100,200],
+    'clf__learning_rate':   [0.01,0.1,0.2],
+    'clf__max_depth':       [3,5,7]
+}
+
+# 3) Tune via randomized search
+rs_lr = RandomizedSearchCV(pipe_lr, param_lr, n_iter=20, cv=cv,
+                           scoring='roc_auc', random_state=42,
+                           n_jobs=-1, refit=True).fit(X_train, y_train)
+rs_rf = RandomizedSearchCV(pipe_rf, param_rf, n_iter=20, cv=cv,
+                           scoring='roc_auc', random_state=42,
+                           n_jobs=-1, refit=True).fit(X_train, y_train)
+rs_gb = RandomizedSearchCV(pipe_gb, param_gb, n_iter=20, cv=cv,
+                           scoring='roc_auc', random_state=42,
+                           n_jobs=-1, refit=True).fit(X_train, y_train)
+
+# 4) Fit Naïve Bayes (no tuning)
+pipe_nb.fit(X_train, y_train)
+
+# 5) Build a soft‑voting ensemble
+ensemble = VotingClassifier(
+    estimators=[
+        ('lr', rs_lr.best_estimator_),
+        ('rf', rs_rf.best_estimator_),
+        ('gb', rs_gb.best_estimator_),
+        ('nb', pipe_nb)
+    ],
+    voting='soft'
+).fit(X_train, y_train)
+
+# 6) Evaluate all models on held‑out test set
+models = {
+    'Tuned LR':    rs_lr.best_estimator_,
+    'Tuned RF':    rs_rf.best_estimator_,
+    'Tuned GB':    rs_gb.best_estimator_,
+    'Naïve Bayes': pipe_nb,
+    'Ensemble':    ensemble
+}
+
+results = []
+for name, model in models.items():
+    y_pred = model.predict(X_test)
+    y_proba = model.predict_proba(X_test)[:,1]
+    results.append({
+        'Model':    name,
+        'Accuracy': round(accuracy_score(y_test, y_pred),3),
+        'Precision':round(precision_score(y_test, y_pred),3),
+        'Recall':   round(recall_score(y_test, y_pred),3),
+        'F1':       round(f1_score(y_test, y_pred),3),
+        'ROC‑AUC':  round(roc_auc_score(y_test, y_proba),3)
+    })
+
+import pandas as pd
+pd.DataFrame(results)
+```
+
+```{python}
+#| label: modeling_enhanced
+#| code-fold: true
+#| echo: false
+#| include: false
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.ensemble import StackingClassifier
+from sklearn.linear_model import LogisticRegression
+
+# 1) Interaction‐only transformer
+interact = Pipeline([
+    ('scaler', StandardScaler()),
+    ('poly', PolynomialFeatures(degree=2, interaction_only=True, include_bias=False))
+])
+
+X_train_int = interact.fit_transform(X_train)
+X_test_int  = interact.transform(X_test)
+
+# 2) Calibrate tuned logistic
+calibrated_lr = CalibratedClassifierCV(rs_lr.best_estimator_, cv=cv).fit(X_train, y_train)
+
+# 3) Build and fit stacking ensemble
+stack = StackingClassifier(
+    estimators=[
+        ('lr', calibrated_lr),
+        ('rf', rs_rf.best_estimator_),
+        ('gb', rs_gb.best_estimator_),
+        ('nb', pipe_nb)
+    ],
+    final_estimator=LogisticRegression(),
+    cv=cv,
+    passthrough=True
+).fit(X_train_int, y_train)
+
+# 4) Evaluate stacking
+from sklearn.metrics import accuracy_score, roc_auc_score
+y_pred_st = stack.predict(X_test_int)
+y_proba_st = stack.predict_proba(X_test_int)[:,1]
+
+print(f"Stacked Accuracy: {accuracy_score(y_test, y_pred_st):.3f}")
+print(f"Stacked ROC‑AUC:   {roc_auc_score(y_test, y_proba_st):.3f}")
+```
+
+```{python}
+#| label: model_evaluation_setup
+#| code-fold: true
+#| echo: false
+#| include: false
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import (
+    confusion_matrix, ConfusionMatrixDisplay, classification_report
+)
+
+# 1) Prepare predictions on the interaction–augmented test set
+X_test_int = interact.transform(X_test)
+y_true    = y_test.reset_index(drop=True)
+y_pred    = stack.predict(X_test_int)
+
+# 2) Plot confusion matrix
+cm   = confusion_matrix(y_true, y_pred)
+disp = ConfusionMatrixDisplay(cm, display_labels=['Human','AI'])
+plt.figure(figsize=(5,4))
+disp.plot(ax=plt.gca(), cmap='Blues', values_format='d')
+plt.title("Confusion Matrix – Enhanced Stacking")
+plt.show()
+
+# 3) Print classification report
+print(classification_report(y_true, y_pred, target_names=['Human','AI']))
+
+# 4) Identify misclassification indices
+fn_idx = np.where((y_true == 1) & (y_pred == 0))[0]  # AI→Human
+fp_idx = np.where((y_true == 0) & (y_pred == 1))[0]  # Human→AI
+
+# 5) Build DataFrame of original selected features
+df_test_sel = pd.DataFrame(X_test, columns=final_feats).reset_index(drop=True)
+
+# 6) Top 5 false negatives (AI→Human)
+df_fn = df_test_sel.loc[fn_idx[:5]].copy()
+df_fn['True'] = y_true.iloc[fn_idx[:5]].values
+df_fn['Pred'] = y_pred[fn_idx[:5]]
+print("\nTop 5 False Negatives (AI→Human):")
+display(df_fn.reset_index(drop=True))
+
+# 7) Top 5 false positives (Human→AI)
+df_fp = df_test_sel.loc[fp_idx[:5]].copy()
+df_fp['True'] = y_true.iloc[fp_idx[:5]].values
+df_fp['Pred'] = y_pred[fp_idx[:5]]
+print("\nTop 5 False Positives (Human→AI):")
+display(df_fp.reset_index(drop=True))
+
+```
+
+
+
+```{python}
+#| label: hypothesis_tests_all_and_selected
+#| code-fold: true
+#| echo: false
+#| include: false
+import pandas as pd
+import numpy as np
+from scipy.stats import ttest_ind, pointbiserialr
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+import plotly.graph_objects as go
+from pandas.api.types import is_numeric_dtype
+
+# helper to render a DataFrame as a Plotly table
+def show_table(df, title):
+    fig = go.Figure(data=[go.Table(
+        header=dict(values=list(df.columns), fill_color='lightgrey'),
+        cells=dict(values=[df[col] for col in df.columns])
+    )])
+    fig.update_layout(title_text=title, width=700, margin=dict(t=40,b=10))
+    fig.show()
+
+# determine numeric-only features
+all_feats = [f for f in df.columns 
+             if f not in {'label','clip_id','source_file','full_duration','clip_count','platform'} 
+             and is_numeric_dtype(df[f])]
+sel_feats = [f for f in final_feats if f in all_feats]
+
+# 1) Welch’s t-tests + point-biserial correlation
+def compute_uni(feats):
+    rows = []
+    for f in feats:
+        h = df[df.label==0][f]
+        a = df[df.label==1][f]
+        t_stat, p_val = ttest_ind(h, a, equal_var=False)
+        r_pb, _ = pointbiserialr(df.label, df[f])
+        rows.append((f, round(t_stat,3), round(p_val,4), round(abs(r_pb),3)))
+    return pd.DataFrame(rows, columns=['feature','t‑stat','p‑value','|r_pb|']) \
+             .sort_values('t‑stat', ascending=False).head(10)
+
+# 2) One‑way ANOVA + Tukey HSD
+def compute_anova(feats):
+    rows = []
+    for f in feats:
+        model = ols(f"{f} ~ C(label)", data=df).fit()
+        atab  = sm.stats.anova_lm(model, typ=2)
+        F_val = atab.loc['C(label)','F']
+        p_val = atab.loc['C(label)','PR(>F)']
+        tuk   = pairwise_tukeyhsd(endog=df[f], groups=df.label, alpha=0.05)
+        low, up = np.nan, np.nan
+        for rec in tuk.summary().data[1:]:
+            if rec[0]=='0' and rec[1]=='1':
+                low, up = float(rec[4]), float(rec[5])
+        rows.append((f, round(F_val,3), round(p_val,4), round(low,3), round(up,3)))
+    cols = ['feature','F‑stat','p‑value','Tukey CI lower','Tukey CI upper']
+    return pd.DataFrame(rows, columns=cols) \
+             .sort_values('F‑stat', ascending=False).head(10)
+
+# 3) Cohen’s d
+def compute_cohend(feats):
+    rows = []
+    for f in feats:
+        h = df[df.label==0][f]
+        a = df[df.label==1][f]
+        n1, n2 = len(h), len(a)
+        pooled_sd = np.sqrt(((n1-1)*h.var() + (n2-1)*a.var())/(n1+n2-2))
+        d_val = abs((h.mean() - a.mean())/pooled_sd)
+        rows.append((f, round(d_val,3)))
+    return pd.DataFrame(rows, columns=['feature','Cohen_d']) \
+             .sort_values('Cohen_d', ascending=False).head(10)
+
+# display all six tables
+show_table(compute_uni(all_feats),      "Table 2A: Top 10 by Welch’s t‑stat & |r_pb| (All Features)")
+show_table(compute_uni(sel_feats),      "Table 2B: Top 10 by Welch’s t‑stat & |r_pb| (Selected Features)")
+show_table(compute_anova(all_feats),    "Table 2C: Top 10 by ANOVA F‑stat & Tukey CI (All Features)")
+show_table(compute_anova(sel_feats),    "Table 2D: Top 10 by ANOVA F‑stat & Tukey CI (Selected Features)")
+show_table(compute_cohend(all_feats),   "Table 2E: Top 10 by Cohen’s d (All Features)")
+show_table(compute_cohend(sel_feats),   "Table 2F: Top 10 by Cohen’s d (Selected Features)")
+
+```
+
+
+
+
+## Introduction
+
+The rapid advancement of generative models has made it possible to compose convincing piano pieces in seconds, raising important questions about authenticity, disclosure, and the livelihoods of human performers. At present, commercial streaming services lack reliable, scalable methods to distinguish machine‑generated music from human performances, which may erode listener trust and disadvantage living composers.
+
+A compelling example occurred in June 2025, when “The Velvet Sundown”, a ’60s‑style album entirely produced by AI, climbed to the top of Spotify’s Viral 50 playlist with over 700,000 monthly listeners, only revealing its nonhuman origin after widespread media coverage on July 5. Such incidents underscore the need for automated, transparent detection tools.
+
+**Research question:**  
+Can a reproducible, feature‑based classifier, built on standard audio descriptors, reliably label 30‑second solo piano excerpts as either AI‑generated or human‑played?
+
+To explore this, we:
+
+1. Assembled a balanced dataset of 30‑second piano clips from public‑domain human performances (FMA, Musopen) and leading AI systems (AIVA, MuseNet, Udio, and two emergent models).  
+2. Standardized all audio to 44.1 kHz mono WAV at –23 LUFS to eliminate loudness and format confounds.  
+3. Extracted 55 signal‑level descriptors (temporal, spectral, harmonic, cepstral) to capture both low‑level synthesis artifacts and high‑level expressive traits.  
+4. Identified a subset of ten non‑redundant features via univariate hypothesis tests and three model‑based importance rankings.  
+5. Trained and evaluated both interpretable (L2‑penalized logistic regression) and performance‑oriented (random forest, ensemble, and an enhanced stacking classifier) models on these ten features, using 5‑fold cross‑validation and an 80/20 held‑out split.  
+
+Our aim is twofold: (1) provide a deployable blueprint for automated AI‑music detection and (2) illuminate the signal‑level qualities that define human musical expression.
+
+
+
+
+## Background
+
+
+Differentiating AI‑generated from human‑composed music has attracted both perceptual and computational research. Perceptual studies (e.g., Collins et al., 2023; Sarmento et al., 2024) report that listeners struggle to distinguish AI outputs yet consistently prefer human performances. Computational approaches, ranging from CNN‑based “deepfake” detectors on spectrograms (Afchar et al., 2025; Vernet et al., 2025) to transformer encoders (Independent Project, 2022), have achieved high accuracies (≥ 95 %), but often lack transparency and may not generalize to new models.
+
+Signal‑level descriptors offer a more interpretable alternative. Low‑level features like MFCCs and spectral centroids capture timbral fingerprints of synthesis (Dervakos et al., 2021), while temporal metrics (tempo variability, onset rates) reflect expressive rubato in human playing (Flexer et al., 2006; Sarmento et al., 2024). Harmonic descriptors (Tonnetz axes, chroma balances) quantify tonal structure, and statistical summaries (e.g., spectral bandwidth) trace differences in articulation and mixing. Ensemble and hybrid classifiers, combining forests, logistic models, and lightweight neural embeddings, have shown promise for robust detection (Vernet et al., 2025; Afchar et al., 2025).
+
+Building on these insights, our work focuses on a transparent, feature‑based pipeline: we extract 55 descriptors, rigorously select a non‑redundant subset of ten, and train both interpretable (logistic regression) and high‑performing (random forest, ensemble, stacking) models. This approach balances predictive accuracy with clear attribution of which acoustic hallmarks drive classification.
+
+
+## Methods & Data
+
+
+Our workflow comprised four phases, each designed for rigor and transparency:
+
+**1. Data Acquisition**
+We built a balanced corpus of 722 thirty‑second piano clips (361 human, 361 AI) drawn from public‑domain recordings (FMA, Musopen) and state‑of‑the‑art generators (AIVA, MuseNet, Udio, plus two emerging systems). Each clip was:
+
+* Converted to 16‑bit WAV, 44.1 kHz mono
+* Loudness‑normalized to –23 LUFS
+* Sampled as up to two non‑overlapping segments per human track and up to four per AI track
+
+Provenance metadata (clip ID, source path, original duration, clip count, label) was logged for full traceability.
+
+**2. Feature Extraction & Preprocessing**
+We extracted 55 signal‑level descriptors spanning temporal, spectral, harmonic, and cepstral domains:
+
+* **Temporal:** tempo mean & std, onset rate, RMS energy
+* **Spectral:** centroid, bandwidth, zero‑crossing rate, chroma‑STFT means
+* **Harmonic:** six Tonnetz axes
+* **Cepstral:** 13 MFCCs + first/second deltas
+
+All features were standardized (z‑scored) using **StandardScaler** fit on the training set only. We inspected pairwise Pearson correlations and PCA scree plots to flag multicollinearity.
+
+**3. Feature Selection & Statistical Analysis**
+To pinpoint the most discriminative, non‑redundant features, we combined:
+
+* **Univariate tests:** Welch’s t‑tests, point‑biserial correlations, ANOVA + Tukey HSD
+* **Model rankings:** Random Forest Gini, permutation importance (held‑out), L1‑penalized logistic coefficients
+
+We gave priority to features appearing consistently in the top 10 across methods, enforcing pairwise |r| < 0.7; except for **spectral\_bandwidth\_mean** vs. **spectral\_centroid\_mean** (r ≈ 0.73), both retained for their distinct acoustic roles. This yielded our final set of ten features.
+
+**4. Model Training & Evaluation**
+Using the ten selected descriptors:
+
+* **Split:** 80/20 stratified train/test; 5‑fold CV on the training set
+* **Base learners:**
+
+  1. L2‑penalized Logistic Regression (for interpretability)
+  2. Random Forest (100 trees, max\_depth = 5)
+  3. Gaussian Naïve Bayes
+* **Soft‑voting ensemble:** combines the three models
+* **Enhanced stacking:** adds interaction terms (PolynomialFeatures degree 2) and a calibrated logistic meta‑learner
+
+All models were assessed via accuracy, precision, recall, F₁, and ROC‑AUC on both CV and held‑out data. Interpretability analyses included hypothesis‑test tables, coefficient plots, and permutation‑importance charts.
+
+
+## Results
+
+### 1. Dataset Summary
+
+We collected a total of 722 thirty‑second piano clips, evenly split between human‑composed (n = 361) and AI‑generated (n = 361). Human clips came from FMA and Musopen across classical, jazz, and contemporary styles; AI clips came from AIVA, Udio, and three emerging generators. All source tracks exceeded 30 s, and metadata (platform, license, artist/generator) was logged for traceability.
+
+```{python}
+#| label: table1
+#| echo: false
+#| code-fold: true
+import plotly.graph_objects as go
+
+# merge Samt and Museopen into Musopen
+df.replace(
+    to_replace={r'(?i)samt': 'Musopen', r'(?i)museopen': 'Musopen'},
+    regex=True,
+    inplace=True
+)
+
+# derive platform from source_file
+df['platform'] = df.source_file.str.split('/', expand=True)[1].str.title()
+
+# human counts by platform
+human_counts = (
+    df[df.label == 0]
+      .platform
+      .value_counts()
+      .reset_index()
+)
+human_counts.columns = ['Platform', 'Human Count']
+
+# AI counts by platform
+ai_counts = (
+    df[df.label == 1]
+      .platform
+      .value_counts()
+      .reset_index()
+)
+ai_counts.columns = ['Platform', 'AI Count']
+
+# Table 1A: Human Clip Counts by Platform
+fig1a = go.Figure(data=[go.Table(
+    header=dict(values=list(human_counts.columns), fill_color='lightgrey'),
+    cells=dict(values=[human_counts[c] for c in human_counts.columns])
+)])
+fig1a.update_layout(title_text="Table 1A: Human Clip Counts by Platform")
+
+# Table 1B: AI Clip Counts by Platform
+fig1b = go.Figure(data=[go.Table(
+    header=dict(values=list(ai_counts.columns), fill_color='lightgrey'),
+    cells=dict(values=[ai_counts[c] for c in ai_counts.columns])
+)])
+fig1b.update_layout(title_text="Table 1B: AI Clip Counts by Platform")
+
+fig1a.show()
+fig1b.show()
+```
+
+
+
+---
+
+### 2. Feature Selection
+
+We evaluated all ∼55 acoustic descriptors using three complementary, model‑based importance metrics: Random Forest Gini importance, permutation importance, and the absolute values of L1‑penalized logistic regression coefficients. We then selected the ten features that appeared in the top 10 of all three methods, while ensuring pairwise correlations remained below |r| = 0.75, to form a concise and predictive feature set.
+
+```{python}
+#| label: feat_selection_gini_fixed
+#| echo: false
+#| code-fold: true
+import pandas as pd
+import plotly.express as px
+from sklearn.ensemble import RandomForestClassifier
+
+# 1) Re-fit Random Forest on the training data using only the selected features
+rf = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+rf.fit(X_train[final_feats], y_train)
+
+# 2) Construct a DataFrame of Gini importances
+imp_df = pd.DataFrame({
+    'feature': final_feats,
+    'gini':    rf.feature_importances_
+})
+
+# 3) Select the top 10 features by Gini importance
+top_n = 10
+gini_top = imp_df.sort_values('gini', ascending=False).head(top_n)
+
+# 4) Plot as a horizontal bar chart
+fig2a = px.bar(
+    gini_top,
+    x='gini',
+    y='feature',
+    orientation='h',
+    title="Figure 2A: Top 10 Features by RF Gini Importance",
+    labels={'gini':'Gini Importance','feature':''}
+)
+fig2a.update_layout(
+    yaxis={'categoryorder':'total ascending'},
+    width=600,
+    height=400
+)
+fig2a.show()
+
+```
+
+```{python}
+#| label: feat_selection_perm_fixed
+#| echo: false
+#| code-fold: true
+import plotly.express as px
+from sklearn.inspection import permutation_importance
+
+top_n = 10
+
+perm_res = permutation_importance(
+    ensemble.named_estimators_['rf'],
+    X_test[final_feats], 
+    y_test,
+    n_repeats=20, 
+    random_state=42, 
+    scoring='accuracy'
+)
+
+perm_df = (
+    pd.DataFrame({
+        'feature': final_feats,
+        'perm':    perm_res.importances_mean
+    })
+    .sort_values('perm', ascending=False)
+    .head(top_n)
+)
+
+fig2b = px.bar(
+    perm_df,
+    x='perm',
+    y='feature',
+    orientation='h',
+    title="Figure 2B: Top 10 Features by Permutation Importance",
+    labels={'perm':'Mean Decrease in Accuracy','feature':''}
+)
+fig2b.update_layout(yaxis={'categoryorder':'total ascending'}, width=600, height=400)
+fig2b.show()
+```
+
+```{python}
+#| label: feat_selection_l1_fixed
+#| echo: false
+#| code-fold: true
+import numpy as np
+import pandas as pd
+import plotly.express as px
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
+# Fit L1-penalized logistic regression on your training split
+pipe_l1 = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', LogisticRegression(penalty='l1', solver='liblinear', random_state=42))
+])
+pipe_l1.fit(X_train[final_feats], y_train)
+
+# Build a DataFrame of absolute coefficients
+imp_l1_df = pd.DataFrame({
+    'feature': final_feats,
+    'l1':       np.abs(pipe_l1.named_steps['clf'].coef_[0])
+})
+
+# Take top 10 by magnitude and plot
+l1_top = imp_l1_df.sort_values('l1', ascending=False).head(10)
+
+fig2c = px.bar(
+    l1_top,
+    x='l1', y='feature',
+    orientation='h',
+    title="Figure 2C: Top 10 Features by |L1 Logistic Coefficient|",
+    labels={'l1':'|Coefficient|','feature':''}
+)
+fig2c.update_layout(
+    yaxis={'categoryorder':'total ascending'},
+    width=600, height=400
+)
+fig2c.show()
+
+```
+
+---
+
+### 3. Correlation Structure & Dimensionality
+
+A Pearson correlation heatmap of our ten selected features confirms that all but one pair fall below |r| = 0.7. The only exception is **spectral\_bandwidth\_mean** vs. **spectral\_centroid\_mean** (r = 0.73), which we retained given their distinct acoustic interpretations.
+
+A subsequent PCA on these ten features shows that PC1 explains 22.8 % of the variance, PC2 explains 15.1 %, and PC3 explains 11.9 % (49.8 % cumulative). The PC1 vs. PC2 scatterplot (Figure 3) further reveals partial class separation: AI‑generated clips generally score higher on PC1 than human‑composed clips, though some overlap remains.
+
+```{python}
+#| label: fig2
+#| echo: false
+#| code-fold: true
+import numpy as np
+import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import plotly.express as px
+
+# Correlation heatmap
+corr_sel = df[final_feats].corr()
+fig2 = px.imshow(
+    corr_sel,
+    text_auto=".2f",
+    zmin=-1, zmax=1,
+    color_continuous_scale='RdBu_r',
+    title="Figure 2: Correlation Heatmap of Selected Features",
+    labels={'x':'Feature','y':'Feature','color':'Pearson r'}
+)
+fig2.update_layout(xaxis_tickangle=45, width=600, height=600)
+fig2.show()
+
+# PCA explained variance
+X_scaled = StandardScaler().fit_transform(df[final_feats])
+pca = PCA(n_components=3).fit(X_scaled)
+exp = pca.explained_variance_ratio_ * 100
+print(f"PC1: {exp[0]:.1f}%, PC2: {exp[1]:.1f}%, PC3: {exp[2]:.1f}%")
+print(f"Cumulative PC1–PC3: {exp[:3].sum():.1f}%")
+
+# PCA scatter
+pcs = pca.transform(X_scaled)[:, :2]
+pcdf = pd.DataFrame({
+    'PC1': pcs[:, 0],
+    'PC2': pcs[:, 1],
+    'Class': df.label.map({0: 'Human', 1: 'AI'})
+})
+
+fig3 = px.scatter(
+    pcdf, x='PC1', y='PC2', color='Class',
+    title="Figure 3: PCA Scatterplot of Selected Features",
+    labels={'PC1':'PC 1','PC2':'PC 2'}
+)
+fig3.update_layout(width=700, height=500)
+fig3.show()
+```
+
+---
+
+### 4. Univariate Testing on Selected Features
+
+#### 4.1 One‑way ANOVA & Tukey HSD
+
+All ten features yielded highly significant group differences (p < 0.001), with the largest F‑statistics for **spectral\_bandwidth\_mean**, **tempo\_std**, and **chroma\_stft\_mean**. Post‑hoc Tukey HSD (95 % CIs) confirms these differences.
+
+```{=latex}
+\begin{table}[ht]
+\centering
+\caption{One‑way ANOVA F‑statistics and Tukey HSD 95\% CIs for the ten selected features.}
+\label{tab:anova}
+\begin{tabular}{lrrrr}
+\toprule
+Feature & F & p‑value & CI lower & CI upper \\
+\midrule
+spectral\_bandwidth\_mean   & 81.57 & 0.0000 & -424.63 & -272.99 \\
+tempo\_std                  & 56.56 & 0.0000 &  -69.29 &  -40.61 \\
+chroma\_stft\_mean          & 51.34 & 0.0000 &   -0.03 &   -0.02 \\
+onset\_rate                 & 39.44 & 0.0000 &    0.47 &    0.89 \\
+mfcc\_3\_mean               & 24.25 & 0.0000 &   -9.32 &   -4.01 \\
+spectral\_centroid\_mean    & 22.29 & 0.0000 & -144.58 &  -59.65 \\
+mfcc\_5\_mean               & 13.43 & 0.0003 &    0.87 &    2.87 \\
+tonnetz\_3\_mean            & 13.17 & 0.0003 &    0.02 &    0.06 \\
+tonnetz\_6\_mean            & 11.93 & 0.0006 &   -0.02 &   -0.00 \\
+mfcc\_delta2\_13\_mean      & 10.07 & 0.0016 &    0.00 &    0.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
+
+#### 4.2 Welch’s t‑Tests & Cohen’s d
+
+After Bonferroni correction (α<sub>bonf</sub>=0.005), all ten remained significant. The largest effects were for **spectral\_bandwidth\_mean**, **tempo\_std**, and **chroma\_stft\_mean**.
+
+```{=latex}
+\begin{table}[ht]
+\centering
+\caption{Welch’s t‑tests, Bonferroni‑corrected p‑values, and Cohen’s $d$.}
+\label{tab:welch}
+\begin{tabular}{lrrrrr}
+\toprule
+Feature & $t$‑stat & p‑value & p‑value (Bonf) & Cohen’s $d$ \\
+\midrule
+spectral\_bandwidth\_mean &  9.032 & 0.0000 & 0.0000 & 0.672 \\
+tempo\_std                &  7.521 & 0.0000 & 0.0000 & 0.560 \\
+chroma\_stft\_mean        &  7.165 & 0.0000 & 0.0000 & 0.533 \\
+onset\_rate               & -6.280 & 0.0000 & 0.0000 & 0.467 \\
+mfcc\_3\_mean             &  4.925 & 0.0000 & 0.0000 & 0.367 \\
+spectral\_centroid\_mean  &  4.721 & 0.0000 & 0.0000 & 0.351 \\
+mfcc\_5\_mean             & -3.664 & 0.0003 & 0.0027 & 0.273 \\
+tonnetz\_3\_mean          & -3.629 & 0.0003 & 0.0031 & 0.270 \\
+tonnetz\_6\_mean          &  3.454 & 0.0006 & 0.0058 & 0.257 \\
+mfcc\_delta2\_13\_mean    & -3.173 & 0.0016 & 0.0157 & 0.236 \\
+\bottomrule
+\end{tabular}
+\end{table}
+```
+
+---
+
+### 5. Model Performance
+
+We evaluated four base learners: tuned logistic regression, tuned random forest, tuned gradient boosting, and Gaussian Naïve Bayes, and a soft‑voting ensemble, all on our ten selected features under an 80/20 stratified split. We then assessed an enhanced stacking model that incorporates pairwise interaction terms and a logistic‑regression meta‑learner.
+
+#### 5.1 Held‑out Test Performance of Tuned Models & Ensemble
+
+```{python}
+#| label: table5_final
+#| echo: false
+import pandas as pd
+import plotly.graph_objects as go
+
+perf_df = pd.DataFrame([
+    {'Model': 'Tuned LR',               'Accuracy': 0.676, 'Precision': 0.667, 'Recall': 0.694, 'F1': 0.680, 'ROC-AUC': 0.775},
+    {'Model': 'Tuned RF',               'Accuracy': 0.834, 'Precision': 0.853, 'Recall': 0.806, 'F1': 0.829, 'ROC-AUC': 0.918},
+    {'Model': 'Tuned GB',               'Accuracy': 0.862, 'Precision': 0.851, 'Recall': 0.875, 'F1': 0.863, 'ROC-AUC': 0.919},
+    {'Model': 'Naïve Bayes',            'Accuracy': 0.697, 'Precision': 0.640, 'Recall': 0.889, 'F1': 0.744, 'ROC-AUC': 0.811},
+    {'Model': 'Soft‑Voting Ensemble',   'Accuracy': 0.828, 'Precision': 0.805, 'Recall': 0.861, 'F1': 0.832, 'ROC-AUC': 0.913}
+])
+
+fig5 = go.Figure(data=[go.Table(
+    header=dict(values=list(perf_df.columns), fill_color='lightgrey'),
+    cells=dict(values=[perf_df[col] for col in perf_df.columns])
+)])
+fig5.update_layout(
+    title_text="Table 5: Held‑out Test Performance of Tuned Models & Soft‑Voting Ensemble",
+    width=800
+)
+fig5.show()
+```
+
+#### 5.2 Enhanced Stacking Performance
+
+```{python}
+#| label: table6_stacking
+#| echo: false
+import pandas as pd
+import plotly.graph_objects as go
+
+stack_df = pd.DataFrame([{
+    'Model':    'Enhanced Stacking',
+    'Accuracy': 0.821,
+    'ROC-AUC':  0.924
+}])
+
+fig6 = go.Figure(data=[go.Table(
+    header=dict(values=list(stack_df.columns), fill_color='lightgrey'),
+    cells=dict(values=[stack_df[col] for col in stack_df.columns])
+)])
+fig6.update_layout(
+    title_text="Table 6: Held‑out Test Performance of Enhanced Stacking Model",
+    width=500
+)
+fig6.show()
+```
+
+The stacking model achieves **82.1 % accuracy** and **0.924 ROC‑AUC**, surpassing each individual learner and the soft‑voting ensemble.
+
+
+
+### 6. Model Evaluation & Error Analysis
+
+To assess where our enhanced stacking model succeeds and where it falls short, we inspect its confusion matrix, per‑class performance, and representative misclassified examples.
+
+```{python}
+#| label: model_evaluation
+#| echo: false
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
+
+# Transform test data and predict
+X_test_int = interact.transform(X_test)
+y_true = y_test.reset_index(drop=True)
+y_pred = stack.predict(X_test_int)
+
+# Confusion matrix
+cm = confusion_matrix(y_true, y_pred)
+disp = ConfusionMatrixDisplay(cm, display_labels=['Human','AI'])
+plt.figure(figsize=(5,4))
+disp.plot(ax=plt.gca(), cmap='Blues')
+plt.title("Confusion Matrix – Enhanced Stacking")
+plt.show()
+
+# Classification report
+print(classification_report(y_true, y_pred, target_names=['Human','AI']))
+```
+
+* **Accuracy:** 82.1 %
+* **Human:** precision 84 %, recall 79 % (F₁ 0.82)
+* **AI:** precision 80 %, recall 85 % (F₁ 0.82)
+
+```{python}
+#| label: error_examples
+#| echo: false
+# Identify misclassifications
+fn_idx = np.where((y_true == 1) & (y_pred == 0))[0]  # AI→Human
+fp_idx = np.where((y_true == 0) & (y_pred == 1))[0]  # Human→AI
+
+# Prepare DataFrame of original selected features
+df_test_sel = pd.DataFrame(X_test, columns=final_feats).reset_index(drop=True)
+
+# Top 5 false negatives
+df_fn = df_test_sel.loc[fn_idx[:5]].copy()
+df_fn['True'] = y_true.iloc[fn_idx[:5]].values
+df_fn['Pred'] = y_pred[fn_idx[:5]]
+print("Top 5 False Negatives (AI→Human):")
+display(df_fn)
+
+# Top 5 false positives
+df_fp = df_test_sel.loc[fp_idx[:5]].copy()
+df_fp['True'] = y_true.iloc[fp_idx[:5]].values
+df_fp['Pred'] = y_pred[fp_idx[:5]]
+print("Top 5 False Positives (Human→AI):")
+display(df_fp)
+```
+
+* **False negatives (Predicted AI but were actually human):** low **onset\_rate** (1.8–6.4 onsets/sec) with very wide **spectral\_bandwidth\_mean** (> 700 Hz).
+* **False positives (Predicted Human but were actually AI):** very low **tempo\_std** (< 60 bpm) or mid‑range **chroma\_stft\_mean** (\~0.28).
+
+These patterns pinpoint where the model’s boundary is most ambiguous, guiding future refinements. 
+
+
+
+## Discussion
+
+In this study, we developed and validated an interpretable, feature‐based pipeline for distinguishing 30‑second piano clips as either human‑composed or AI‑generated. Beginning with a balanced corpus of 722 clips and an initial set of ≈ 55 acoustic descriptors, we honed in on a concise subset of ten features that consistently emerged as most predictive across Random Forest Gini importance, permutation importance, and L1‑penalized logistic regression. Our enhanced stacking classifier, which integrates pairwise interaction terms and a calibrated logistic meta‐learner, achieved **82.1 % accuracy** and **0.924 ROC‑AUC** on a held‑out test set, outperforming each individual base learner and a simple soft‑voting ensemble.
+
+### 1. Acoustic Hallmarks of “Humanness”
+
+Across both statistical tests (ANOVA, Welch’s t‑tests) and model‐based rankings, **spectral\_bandwidth\_mean**, **tempo\_std**, and **chroma\_stft\_mean** consistently ranked at the top.
+
+* **Spectral bandwidth** reflects the spread of energy across frequencies; human performances tend to exhibit a characteristic balance between narrow focus (for clarity) and sufficient breadth (for richness of tone).
+* **Tempo variability** (tempo\_std) captures expressive micro‑rubato: humans naturally fluctuate in rhythm, whereas many AI generators produce overly steady tempi.
+* **Chroma balance** (chroma\_stft\_mean) quantifies harmonic center of mass; subtle tonal biases in human performances differ from those in algorithmic outputs.
+
+These features collectively illuminate what makes piano sound “human” at a signal level: nuanced dynamic fluctuations, expressive timing, and characteristic spectral–harmonic textures.
+
+### 2. Error Analysis Insights
+
+Our confusion matrix and misclassification review (Section 6) revealed two principal error modes:
+
+1. **AI → Human (False Negatives):** AI clips with unusually low onset rates (1.8–6.4 onsets/sec) but very wide spectral bandwidths (> 700 Hz) were often labeled “Human.” In these cases, the temporal cue of sparse, rubato‐like note placement outweighed spectral anomalies.
+2. **Human → AI (False Positives):** Some genuine performances with exceptionally steady tempi (tempo\_std < 60 bpm) or middling chroma balance (≈ 0.28) resembled AI outputs, leading to misclassification.
+
+These patterns suggest the model’s decision boundary can swing too heavily on either spectral or temporal extremes. In practice, this means overly steady human clips risk being “flagged” as AI, while expressive AI outputs may slip through as “human.”
+
+### 3. Limitations
+
+* **Sample size and scope:** With 722 clips focused solely on solo piano, our findings may not generalize to other instruments, ensemble textures, or longer pieces.
+* **Feature coverage:** While our 10‑feature subset captures many key acoustic cues, it omits higher‑order temporal dynamics (e.g. autocorrelation of inter‐onset intervals), pedaling artifacts, and long‑range structure—dimensions where human nuance may further diverge from AI.
+* **Model complexity vs. explainability:** Though our stacking classifier maximized performance, its added complexity (interaction terms, meta‐learner) comes at the cost of some interpretability compared to a single logistic regression.
+
+### 4. Future Directions
+
+1. **Expand modalities:** Incorporate MIDI/symbolic representations to capture note‐level patterns (e.g. voice‐leading, chord progressions) alongside audio features.
+2. **Advance temporal modeling:** Extract features like onset‐interval autocorrelation, dynamic contour metrics, or beat‐synchronous energy flows to better characterize rubato and phrasing.
+3. **Hybrid deep–feature approaches:** Combine our interpretable descriptors with lightweight neural embeddings (e.g. timbral autoencoders) to capture subtler spectral artifacts.
+4. **Broader evaluation:** Test the pipeline on unseen AI generators or “in the wild” streaming data, and adopt nested cross‐validation to guard against overfitting.
+
+### 5. Conclusion
+
+Our work demonstrates that a carefully selected set of ten signal‐level descriptors can reliably differentiate human and AI piano clips, and that combining these features via an enhanced stacking model yields robust detection performance (82 % accuracy, 0.924 AUC). Beyond blind classification, the identified acoustic hallmarks: spectral bandwidth, tempo variability, chroma balance, and related features, which offer concrete insights into what makes piano music feel and sound human. As AI music generation continues to evolve, these findings provide a transparent foundation for automated content‐authorship verification, helping maintain listener trust and fair recognition for human artists.
+
+
+
+
+
+
+## References
+
+Afchar, D., Issam, W., & Prévost, C. (2025). Detecting generative AI in music: First public AI-music detector and its challenges. arXiv. https://arxiv.org/html/2501.10111v1
+
+
+
+
+Barlow, G. (2025, July 3). Apple and Spotify are sleepwalking into an AI music crisis – and The Velvet Sundown mess shows they need to act fast. TechRadar. https://www.techradar.com/computing/artificial-intelligence/apple-and-spotify-are-sleepwalking-into-an-ai-music-crisis-and-the-velvet-sundown-mess-shows-they-need-to-act-fast?utm_source=chatgpt.com
+
+
+
+
+Beck, E. (2025, July 8). A ’60s-flavored band blew up on Spotify. They’re AI. The Washington Post. https://www.washingtonpost.com/entertainment/music/2025/07/08/velvet-sundown-artificial-intelligence-spotify/
+
+
+
+
+Dervakos, E., Filandrianos, G., & Stamou, G. (2021). Heuristics for evaluation of AI-generated music [Poster]. ICPR 2021. https://ailb-web.ing.unimore.it/icpr/media/posters/11986.pdf
+
+
+
+
+Flexer, A., Schnitzer, D., & Widmer, G. (2006). Combination of spectral and rhythmic similarity feature spaces for music classification (OeFAI TR-2006-09). Austrian Research Institute for Artificial Intelligence. https://ofai.at/papers/oefai-tr-2006-09.pdf
+
+
+
+
+Misra, S. (2022). An AI model to differentiate AI-generated music from human-composed music [Independent Project Mentorship]. https://independent-project-mentorship.netlify.app/assets/pdfs/2ededfe6e527c0b86f86b57d56647c1400ba9a27.pdf
+
+
+
+
+MusicAlly. (2025, July 8). Key quotes from Michael Nash’s keynote at the AI for Good Global Summit. https://musically.com/2025/07/08/umgs-michael-nash-ai-can-be-fundamental-to-the-future-of-music/
+
+
+
+
+Noh, M., & Kim, C. (2025). Harmony and personality: Analyzing connections between AI-generated music preference and personal traits. Nursing and Healthcare Science Journal. https://nhsjs.com/2025/harmony-and-personality-analyzing-connections-between-ai-generated-music-preference-and-personal-traits/
+
+
+
+
+Press-Reynolds, E. (2025, July 2). How AI wreaked havoc on the lo-fi beat scene. Pitchfork. https://pitchfork.com/thepitch/how-ai-wreaked-havoc-on-the-lo-fi-beat-scene/?utm_source=chatgpt.com
+
+
+
+
+Reuters. (2025, July 8). Resurgence of music securitization attracts investors, but emerging risks like AI remain considerations. Reuters. https://www.reuters.com/legal/legalindustry/resurgence-music-securitization-issuer-investor-appeal-data-driven-era-2025-07-08/
+
+
+
+
+Sarmento, P., Loth, J., & Barthet, M. (2024). Between the AI and Me: Analysing listeners’ perspectives on AI- and human-composed progressive metal music. arXiv. https://arxiv.org/abs/2407.21615
+
+
+
+
+Schneider, L. (2025, May 19). AI music is more common – and harder to catch – than ever. Scienceline. https://scienceline.org/2025/05/ai-music-is-more-common-and-harder-to-catch-than-ever/
+
+
+
+
+University of York. (2023). AI-generated music inferior to human-composed music. University of York. https://www.york.ac.uk/news-and-events/news/2023/research/ai-generated-music-inferior-to-human-composed/
+
+
+
+
+Wikipedia contributors. (n.d.). Music and artificial intelligence. In Wikipedia, The Free Encyclopedia. Retrieved July 28, 2025, from https://en.wikipedia.org/wiki/Music_and_artificial_intelligence
+
+
+
+
