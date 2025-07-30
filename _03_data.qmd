@@ -1,1 +1,45 @@
-# Data
+## Methods & Data
+
+
+Our workflow comprised four phases, each designed for rigor and transparency:
+
+**1. Data Acquisition**
+We built a balanced corpus of 722 thirty‑second piano clips (361 human, 361 AI) drawn from public‑domain recordings (FMA, Musopen) and state‑of‑the‑art generators (AIVA, MuseNet, Udio, plus two emerging systems). Each clip was:
+
+* Converted to 16‑bit WAV, 44.1 kHz mono
+* Loudness‑normalized to –23 LUFS
+* Sampled as up to two non‑overlapping segments per human track and up to four per AI track
+
+Provenance metadata (clip ID, source path, original duration, clip count, label) was logged for full traceability.
+
+**2. Feature Extraction & Preprocessing**
+We extracted 55 signal‑level descriptors spanning temporal, spectral, harmonic, and cepstral domains:
+
+* **Temporal:** tempo mean & std, onset rate, RMS energy
+* **Spectral:** centroid, bandwidth, zero‑crossing rate, chroma‑STFT means
+* **Harmonic:** six Tonnetz axes
+* **Cepstral:** 13 MFCCs + first/second deltas
+
+All features were standardized (z‑scored) using **StandardScaler** fit on the training set only. We inspected pairwise Pearson correlations and PCA scree plots to flag multicollinearity.
+
+**3. Feature Selection & Statistical Analysis**
+To pinpoint the most discriminative, non‑redundant features, we combined:
+
+* **Univariate tests:** Welch’s t‑tests, point‑biserial correlations, ANOVA + Tukey HSD
+* **Model rankings:** Random Forest Gini, permutation importance (held‑out), L1‑penalized logistic coefficients
+
+We gave priority to features appearing consistently in the top 10 across methods, enforcing pairwise |r| < 0.7; except for **spectral\_bandwidth\_mean** vs. **spectral\_centroid\_mean** (r ≈ 0.73), both retained for their distinct acoustic roles. This yielded our final set of ten features.
+
+**4. Model Training & Evaluation**
+Using the ten selected descriptors:
+
+* **Split:** 80/20 stratified train/test; 5‑fold CV on the training set
+* **Base learners:**
+
+  1. L2‑penalized Logistic Regression (for interpretability)
+  2. Random Forest (100 trees, max\_depth = 5)
+  3. Gaussian Naïve Bayes
+* **Soft‑voting ensemble:** combines the three models
+* **Enhanced stacking:** adds interaction terms (PolynomialFeatures degree 2) and a calibrated logistic meta‑learner
+
+All models were assessed via accuracy, precision, recall, F₁, and ROC‑AUC on both CV and held‑out data. Interpretability analyses included hypothesis‑test tables, coefficient plots, and permutation‑importance charts.
