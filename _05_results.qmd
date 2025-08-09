@@ -1,1 +1,31 @@
 # Results
+
+Dataset Summary
+
+The final dataset contained 722 thirty-second solo piano excerpts, evenly split between human-composed (n = 361) and AI-generated (n = 361) excerpts. Human recordings were drawn from public-domain libraries (FMA and Musopen) spanning classical, jazz and contemporary styles. AI-generated examples came from four systems (AIVA, Udio and two emergent models) to capture a range of algorithmic approaches. All source tracks exceeded 30 seconds, and metadata (platform, license, creator or generator name) was recorded for traceability.
+
+Model Choice and Pipeline
+
+Initial experiments with individual classifiers (logistic regression, random forest, gradient boosting) revealed trade-offs between interpretability and performance. We ultimately settled on a stacking model combining calibrated logistic regression, random forest (100 trees, max_depth = 5), gradient boosting, and naïve Bayes base learners. Pairwise interaction terms were added via second-degree polynomial features, and a logistic regression meta-learner was used to integrate their outputs. Stratified five-fold cross-validation guided hyperparameter selection and helped limit overfitting, while a final hold-out evaluation provided an unbiased assessment.
+
+Model Evaluation
+
+Table 2 presents the results of the stacking model on the 20% hold-out test set.
+
+Figure 5 shows the results of the classifier.
+
+Report Train Accuracy
+
+The ROC curve for the model is shown in Figure 6, it shows that the area under the curve is 0.924. This means that the model has a 92.4% chance of classifying an excerpt correctly.
+
+Both classes had the same F1 score (0.82), and ROC-AUC was particularly informative as it evaluates ranking performance independently of any threshold.
+
+4. Error Analysis
+
+To explore where the model was less certain, we reviewed the five most extreme misclassifications in each category. Figure 7 shows the instances where the classification resulted in an AI-generated excerpt was incorrectly labeled as a human-composed excerpt, a false positive, and also where the classification resulted in a human-composed excerpt being incorrectly labeled as an AI-generated excerpt, a false negative.
+
+These AI excerpts combined wide spectral bandwidth with sparse timing cues, suggesting the model sometimes weighed rhythm more heavily than timbre.
+Some human excerpts showed very steady tempo or average chroma balance, making them more similar to AI-generated clips.
+
+Overall, these results indicate that the stacking approach can distinguish human from AI piano excerpts reasonably well, while also highlighting specific acoustic conditions that blur the model’s decision boundary.
+
