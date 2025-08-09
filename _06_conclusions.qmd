@@ -1,1 +1,31 @@
 # Conclusions
+
+
+Discussion
+
+In this work, we developed a transparent, feature-based pipeline to distinguish 30-second solo piano excerpts as human-composed or AI-generated. By starting with a balanced dataset of 722 excerpts and extracting 55 acoustic descriptors, we used statistical tests and model-based rankings to hone in on a non-redundant set of ten features. Our enhanced stacking ensemble, combining calibrated logistic regression, random forest, gradient boosting, and naïve Bayes with interaction terms, achieved 82.1 % accuracy (0.924 ROC-AUC) on held-out data. While these results are encouraging, our primary goal is to illuminate which acoustic cues reliably signal “humanness” in piano performance.
+
+Acoustic Cues of “Humanness”
+
+Three features consistently emerged as the strongest discriminators. Spectral bandwidth (spread of energy across frequencies) reflects the balance between clarity and richness in tone that human pianists naturally produce. Tempo variability (standard deviation of tempo) captures subtle rubato and expressive timing that many AI generators still lack. Chroma balance (distribution of pitch-class energy) quantifies harmonic nuances, variations in chord voicings and tonal emphasis, that distinguish human touch from algorithmic output. Together, these cues represent dynamic, rhythmic, and harmonic dimensions of musical expressivity.
+
+Error Modes and Model Boundaries
+
+The error analysis revealed two principal misclassification patterns. Some AI-generated clips with sparse, rubato-like onset patterns but very wide spectral bandwidths were mistaken as human, suggesting the model sometimes places heavier weight on temporal cues at the expense of timbral signals. Conversely, highly steady human performances with narrow tempo variation or average chroma balance occasionally resembled AI clips, indicating that over-mechanical human playing can trigger false positives. These insights highlight where the model’s decision boundary could be refined by integrating additional temporal dynamics or pedaling artifacts, for instance.
+
+Data Ethics
+
+We recognize that building and deploying an AI-music detector carries a range of ethical considerations. First, our human recordings were drawn exclusively from public-domain collections (FMA, Musopen) under clear licensing terms, ensuring that no private or proprietary performances were used without permission. Nonetheless, these collections may not fully represent the diversity of piano traditions or performer backgrounds, and applying our model outside this narrow scope could introduce stylistic or cultural biases.
+
+Misclassification also poses real risks: falsely labeling a human performance as AI-generated could unfairly damage an artist’s reputation, while failing to flag AI content may enable misuse or misattribution. To mitigate these harms, any automated predictions should be accompanied by confidence scores and, where possible, reviewed by human experts before taking action.
+
+We further acknowledge that publishing the specific acoustic markers of “humanness” may contribute to a technological arms race: AI developers could use these insights to refine their generative models, reducing the effectiveness of static detectors. As a result, detection methods will need continuous updating, community-driven countermeasures, and transparent sharing of data and code. By open-sourcing our feature-selection pipeline, model configurations, and evaluation data, we aim to foster collaborative auditing and improvement, while emphasizing that our classifier is intended as a research prototype, not a final arbiter of musical authenticity.
+
+We also see a problem with the products like Suno, AIVA, etc. in the fact that some have noted that the content they produce is based on training data which can replicate the sound of human artists which can be considered close to copyright infringement. 
+Directions for Future Work
+
+To broaden applicability, future studies should incorporate MIDI/symbolic data for note-level analysis (voice-leading, chord progressions) alongside audio features. Enhancing temporal modeling with metrics like onset-interval autocorrelation or beat-synchronous energy flows could improve sensitivity to expressive phrasing. Hybrid approaches that integrate interpretable features with lightweight neural embeddings (e.g., timbral autoencoders) may capture subtler spectral artifacts. Finally, evaluating the pipeline on unseen AI systems and “in-the-wild” streaming data, using nested cross-validation to guard against overfitting, will be critical for real-world deployment.
+
+By clearly identifying which acoustic characteristics drive classification and acknowledging both technical and ethical challenges, we offer a replicable foundation for ongoing work in automated AI-music detection, helping to support listener trust and fair recognition of human artistry.
+
+
