@@ -1,1 +1,16 @@
 # Methods
+Data Acquisition
+
+Data for this project was gathered from multiple sources. The human-composed solo piano music was gathered from two different open source music archives including: Free Music Archive, and Musopen. The AI-generated music was manually sourced by utilizing free web based AI music generators: AIVA, Suno, Udio, Riffusion, and deepAI. To be included in the dataset every piece had to be of a certain quality and only contain sounds coming from a piano. Pieces that included background noise, audio distortions, or if the music was faint, meant that the piece did not meet the quality standards to be included in the data set.
+
+While the human-composed solo piano pieces already existed, the AI-generated music was generated solely for the purpose of this project. The AI-generated pieces were all generated via a prompt such as “solo piano, only piano,” and other key words with the intention of reflecting the human-composed music used in the dataset. Prompts such as this were used because it led to more pieces containing only piano than more descriptive prompts. The reason the pieces were generated for this project was to minimize the fact that we would not know how the pieces were generated.
+Data Processing
+
+After downloading human and AI-generated solo piano pieces from their respective sources, several preprocessing steps were taken to prepare a consistent and balanced dataset. A Python script was utilized to standardize each audio file to mono 16-bit WAV format at 44.1 kHz sampling rate and normalized loudness to -23 LUFS, eliminating differences related to audio quality and loudness. To ensure sufficient sample size and balanced representation, especially since AI-generated pieces tended to be shorter, we randomly extracted up to four 30-second excerpts from each AI-generated track, and up to two excerpts from each human-performed track. These excerpts were selected by dividing each piece into non-overlapping excerpts and randomly sampling among them.
+
+From each excerpt, we extracted a variety of acoustic features covering four broad categories. Spectral features capture the overall sound color or timbre of the piano, reflecting characteristics such as brightness and tonal complexity. Temporal features describe rhythmic and timing aspects, such as how consistently or expressively the performer maintains tempo. Harmonic features quantify the musical relationships between notes and chords, providing insights into the structural and tonal qualities of the music. Finally, cepstral features represent subtle variations in sound texture, helping to distinguish nuanced differences in tone and articulation between human and AI performances. Collectively, these acoustic features allowed us to systematically characterize the musical differences between human-performed and AI-generated piano excerpts.
+The resulting data set includes 58 acoustic features from a balanced number of 722 30 second excerpts, 361 of which were AI-generated excerpts and 361 of which were human-composed excerpts.
+
+Feature Selection & Statistical Analysis
+
+Used in the final models was a group of ten features. Table 1 provides an overview of these features and their definitions.
