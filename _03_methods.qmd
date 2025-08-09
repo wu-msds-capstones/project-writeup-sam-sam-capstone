@@ -14,3 +14,29 @@ The resulting data set includes 58 acoustic features from a balanced number of 7
 Feature Selection & Statistical Analysis
 
 Used in the final models was a group of ten features. Table 1 provides an overview of these features and their definitions.
+
+
+To identify a concise and informative subset of acoustic features, we employed a rigorous, two-step selection approach that combined statistical hypothesis testing and model-based importance rankings.
+
+First, we used several univariate statistical tests, Welch’s t-tests, point-biserial correlations, and one-way ANOVA with post-hoc Tukey HSD, to measure the strength and consistency of differences between human-composed and AI-generated piano excerpts. Welch’s t-test was chosen because it robustly handles unequal variances and unequal sample sizes between groups. The point-biserial correlation, shown in Figure 2, quantified the strength of the linear relationship between each feature and the binary outcome (human or AI). The ANOVA (with Tukey post-hoc tests) confirmed statistically significant differences between group means while adjusting for multiple comparisons. Figure 1 displays the standardized mean differences of the final features that were selected, and whether or not the means are higher in the AI or human-composed classes.
+
+Next, we compared feature rankings from three complementary methods, as shown in Figure 3. On the left, Cohen’s d quantifies each feature’s standardized effect size between human and AI clips, providing a model-agnostic measure of group differences. In the center, the absolute coefficients from an L1-penalized logistic regression pick out features with the strongest linear contributions to classification, enforcing sparsity to highlight only the most robust predictors. On the right, Random Forest Gini importance captures non-linear effects and interactions by measuring how much each feature reduces impurity across the ensemble’s decision trees. Including Cohen’s d alongside these model-based scores ensures we retain features that exhibit large, consistent differences in the raw data, even before any model fitting.
+
+Features were prioritized based on how consistently they ranked in the top 10 across multiple methods. However, it was important to keep in mind feature redundancy which we discuss in the next section.
+
+Feature Redundancy Check and Final Selection Criteria
+
+To reduce multicollinearity and improve interpretability, we computed pairwise Pearson correlations, Figure 4, among all top-ranked features and enforced a threshold of |r| < 0.7, meaning no two selected features could be too closely correlated. The only exception was spectral_bandwidth_mean and spectral_centroid_mean, which were moderately correlated (r ≈ 0.73) but retained due to their distinct acoustic interpretations: bandwidth reflects spread of energy across frequencies, while centroid captures perceived brightness.
+
+This filtering step ensured that our final subset of ten acoustic features was both non-redundant and consistently predictive. Exploratory Visualization with Selected Features
+
+To gain intuition about the separability of human-performed versus AI-generated piano excerpts in our selected feature space, we projected the ten features into two dimensions using t-distributed Stochastic Neighbor Embedding (t-SNE). As shown in Figure 4, each point represents a 30-second clip, colored yellow for humans and purple for AI.
+
+Although the two classes are not perfectly separated—which reflects the inherent overlap in some acoustic characteristics—you can see distinct “pockets” where human excerpts cluster (often those with more expressive timing fluctuations and narrower spectral spreads) and where AI clips cluster (tending toward steadier tempi and broader spectral energy). This partial clustering confirms that our ten features capture meaningful differences, and it motivates the use of a supervised model to formalize the discrimination.
+
+We observed that some AI-generated excerpts fell into the same regions of the t-SNE plot as human performances, but we did not identify any clear, consistent reason why certain clips overlapped while others did not. No single feature or platform fully explains these overlaps, suggesting that both human and AI outputs can share similar acoustic profiles under certain conditions. At this stage, we conclude that the occasional intermingling of clusters reflects natural variation in playing style and generative model behavior rather than a systematic bias in our feature set.
+
+
+
+
+
