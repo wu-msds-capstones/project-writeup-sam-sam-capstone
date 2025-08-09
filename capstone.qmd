@@ -1,15 +1,20 @@
 ---
-title: "Capstone Project"
-subtitle: Subtitle
-authors:
-  - Bob
-  - Jane
-title-block-banner: true
-format: 
+title: "Using Machine Learning to Classify AI‑ and Human‑Composed Solo Piano Pieces"
+author:
+  - Sam Beilenson
+  - Sam Twenhafel
+date: July 22, 2025
+abstract: |
+  As AI‑driven music generation proliferates, streaming platforms lack reliable ways to flag machine‑created tracks, risking listener trust and undercutting human composers. We address this gap by developing and validating a feature‑based classifier that distinguishes 30‑second solo piano excerpts as AI‑generated or human‑played. Leveraging 58 signal‑level descriptors (spectral, temporal, harmonic, cepstral), we identify the ten most predictive, non‑redundant features via statistical tests and model‑based rankings. Trained on a balanced corpus of public‑domain recordings (FMA, Musopen) and leading generative models (AIVA, MuseNet, Udio), our enhanced stacking ensemble achieves 82.1% accuracy and 0.924 ROC‑AUC. Beyond classification, we illuminate the acoustic hallmarks of “humanness”, such as spectral bandwidth, tempo variability, and chroma balance, offering a transparent blueprint for automated AI‑content detection and insights into musical expressivity.
+
+jupyter: python3
+format:
   html:
-    theme:
-      light: lightly
-      dark: darkly
+    code-fold: true
+execute:
+  echo: false
+  warning: false
+  error:   false
 ---
 
 {{< include _01_intro.qmd >}}
