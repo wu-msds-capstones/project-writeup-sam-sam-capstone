@@ -11,6 +11,8 @@ jupyter: python3
 format:
   html:
     code-fold: true
+    toc: true
+    number-sections: true
 execute:
   echo: false
   warning: false
