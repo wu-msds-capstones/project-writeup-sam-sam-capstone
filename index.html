@@ -6,8 +6,11 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Sam Beilenson">
+<meta name="author" content="Sam Twenhafel">
+<meta name="dcterms.date" content="2025-07-22">
 
-<title>Capstone Project</title>
+<title>Using Machine Learning to Classify AI‑ and Human‑Composed Solo Piano Pieces</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,269 +33,139 @@ ul.task-list li input[type="checkbox"] {
 <script src="capstone_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="capstone_files/libs/quarto-html/anchor.min.js"></script>
 <link href="capstone_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="capstone_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="capstone_files/libs/quarto-html/quarto-syntax-highlighting-dark-2fef5ea3f8957b3e4ecc936fc74692ca.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="capstone_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="capstone_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="capstone_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="capstone_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="capstone_files/libs/bootstrap/bootstrap-81267100e462c21b3d6c0d5bf76a3417.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="capstone_files/libs/bootstrap/bootstrap-dark-b15df86742554840d07b04d0f56a07e9.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="capstone_files/libs/bootstrap/bootstrap-81267100e462c21b3d6c0d5bf76a3417.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="capstone_files/libs/bootstrap/bootstrap-81267100e462c21b3d6c0d5bf76a3417.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
 
 </head>
 
-<body class="fullcontent quarto-light"><script id="quarto-html-before-body" type="application/javascript">
-    const toggleBodyColorMode = (bsSheetEl) => {
-      const mode = bsSheetEl.getAttribute("data-mode");
-      const bodyEl = window.document.querySelector("body");
-      if (mode === "dark") {
-        bodyEl.classList.add("quarto-dark");
-        bodyEl.classList.remove("quarto-light");
-      } else {
-        bodyEl.classList.add("quarto-light");
-        bodyEl.classList.remove("quarto-dark");
-      }
-    }
-    const toggleBodyColorPrimary = () => {
-      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
-      if (bsSheetEl) {
-        toggleBodyColorMode(bsSheetEl);
-      }
-    }
-    const setColorSchemeToggle = (alternate) => {
-      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
-      for (let i=0; i < toggles.length; i++) {
-        const toggle = toggles[i];
-        if (toggle) {
-          if (alternate) {
-            toggle.classList.add("alternate");
-          } else {
-            toggle.classList.remove("alternate");
-          }
-        }
-      }
-    };
-    const toggleColorMode = (alternate) => {
-      // Switch the stylesheets
-      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
-      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
-      manageTransitions('#quarto-margin-sidebar .nav-link', false);
-      if (alternate) {
-        // note: dark is layered on light, we don't disable primary!
-        enableStylesheet(alternateStylesheets);
-        for (const sheetNode of alternateStylesheets) {
-          if (sheetNode.id === "quarto-bootstrap") {
-            toggleBodyColorMode(sheetNode);
-          }
-        }
-      } else {
-        disableStylesheet(alternateStylesheets);
-        enableStylesheet(primaryStylesheets)
-        toggleBodyColorPrimary();
-      }
-      manageTransitions('#quarto-margin-sidebar .nav-link', true);
-      // Switch the toggles
-      setColorSchemeToggle(alternate)
-      // Hack to workaround the fact that safari doesn't
-      // properly recolor the scrollbar when toggling (#1455)
-      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
-        manageTransitions("body", false);
-        window.scrollTo(0, 1);
-        setTimeout(() => {
-          window.scrollTo(0, 0);
-          manageTransitions("body", true);
-        }, 40);
-      }
-    }
-    const disableStylesheet = (stylesheets) => {
-      for (let i=0; i < stylesheets.length; i++) {
-        const stylesheet = stylesheets[i];
-        stylesheet.rel = 'disabled-stylesheet';
-      }
-    }
-    const enableStylesheet = (stylesheets) => {
-      for (let i=0; i < stylesheets.length; i++) {
-        const stylesheet = stylesheets[i];
-        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
-          stylesheet.rel = 'stylesheet';
-        }
-      }
-    }
-    const manageTransitions = (selector, allowTransitions) => {
-      const els = window.document.querySelectorAll(selector);
-      for (let i=0; i < els.length; i++) {
-        const el = els[i];
-        if (allowTransitions) {
-          el.classList.remove('notransition');
-        } else {
-          el.classList.add('notransition');
-        }
-      }
-    }
-    const isFileUrl = () => {
-      return window.location.protocol === 'file:';
-    }
-    const hasAlternateSentinel = () => {
-      let styleSentinel = getColorSchemeSentinel();
-      if (styleSentinel !== null) {
-        return styleSentinel === "alternate";
-      } else {
-        return false;
-      }
-    }
-    const setStyleSentinel = (alternate) => {
-      const value = alternate ? "alternate" : "default";
-      if (!isFileUrl()) {
-        window.localStorage.setItem("quarto-color-scheme", value);
-      } else {
-        localAlternateSentinel = value;
-      }
-    }
-    const getColorSchemeSentinel = () => {
-      if (!isFileUrl()) {
-        const storageValue = window.localStorage.getItem("quarto-color-scheme");
-        return storageValue != null ? storageValue : localAlternateSentinel;
-      } else {
-        return localAlternateSentinel;
-      }
-    }
-    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
-      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
-      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
-      let newTheme = '';
-      if(authorPrefersDark) {
-        newTheme = isAlternate ? baseTheme : alternateTheme;
-      } else {
-        newTheme = isAlternate ? alternateTheme : baseTheme;
-      }
-      const changeGiscusTheme = () => {
-        // From: https://github.com/giscus/giscus/issues/336
-        const sendMessage = (message) => {
-          const iframe = document.querySelector('iframe.giscus-frame');
-          if (!iframe) return;
-          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
-        }
-        sendMessage({
-          setConfig: {
-            theme: newTheme
-          }
-        });
-      }
-      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
-      if (isGiscussLoaded) {
-        changeGiscusTheme();
-      }
-    };
-    const authorPrefersDark = false;
-    const darkModeDefault = authorPrefersDark;
-      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
-      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
-    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
-    // Dark / light mode switch
-    window.quartoToggleColorScheme = () => {
-      // Read the current dark / light value
-      let toAlternate = !hasAlternateSentinel();
-      toggleColorMode(toAlternate);
-      setStyleSentinel(toAlternate);
-      toggleGiscusIfUsed(toAlternate, darkModeDefault);
-      window.dispatchEvent(new Event('resize'));
-    };
-    // Switch to dark mode if need be
-    if (hasAlternateSentinel()) {
-      toggleColorMode(true);
-    } else {
-      toggleColorMode(false);
-    }
-  </script>
+<body class="fullcontent quarto-light">
 
-<header id="title-block-header" class="quarto-title-block default page-columns page-full">
-  <div class="quarto-title-banner page-columns page-full">
-    <div class="quarto-title column-body">
-      <h1 class="title">Capstone Project</h1>
-            <p class="subtitle lead">Subtitle</p>
-                      </div>
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Using Machine Learning to Classify AI‑ and Human‑Composed Solo Piano Pieces</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Authors</div>
+    <div class="quarto-title-meta-contents">
+             <p>Sam Beilenson </p>
+             <p>Sam Twenhafel </p>
+          </div>
   </div>
     
-  
-  <div class="quarto-title-meta">
-
-      <div>
-      <div class="quarto-title-meta-heading">Authors</div>
-      <div class="quarto-title-meta-contents">
-               <p>Bob </p>
-               <p>Jane </p>
-            </div>
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">July 22, 2025</p>
     </div>
-      
-    
-      
-    </div>
-    
+  </div>
   
-  </header><div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+    
+  </div>
+  
+<div>
+  <div class="abstract">
+    <div class="block-title">Abstract</div>
+    <p>Distinguishing AI-generated from human-performed music is challenging due to differences in instrumentation, style, and production techniques. To minimize these confounding factors, we focused exclusively on 30-second solo piano excerpts, assembling a balanced dataset of 722 clips (361 human, 361 AI). After extracting acoustic descriptors related to spectral content, rhythm, harmony, and timbre, we identified ten highly predictive features through statistical testing and model-based selection. We trained an enhanced stacking ensemble classifier combining logistic regression, random forest, gradient boosting, and naïve Bayes methods. On an unseen hold-out set, the stacking model achieved an accuracy of 82.1% (ROC-AUC 0.924). The strongest predictors included spectral bandwidth, tempo variability, and chroma balance, highlighting clear acoustic signatures associated with human musical performance. These findings offer a transparent and scalable foundation for automated detection of AI-generated music .</p>
+  </div>
+</div>
 
-<main class="content quarto-banner-title-block" id="quarto-document-content">
 
-
-
-
+</header>
 
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>The rapid advancement of generative models has made it possible to compose convincing piano pieces in seconds, raising important questions about authenticity, disclosure, and the livelihoods of human performers. At present, commercial streaming services lack reliable, scalable methods to distinguish machine‑generated music from human performances, which may erode listener trust and disadvantage living composers.</p>
-<p>A compelling example occurred in June 2025, when “The Velvet Sundown”, a ’60s‑style album entirely produced by AI, climbed to the top of Spotify’s Viral 50 playlist with over 700,000 monthly listeners, only revealing its nonhuman origin after widespread media coverage on July 5. Such incidents underscore the need for automated, transparent detection tools.</p>
-<p><strong>Research question:</strong><br>
-Can a reproducible, feature‑based classifier, built on standard audio descriptors, reliably label 30‑second solo piano excerpts as either AI‑generated or human‑played?</p>
-<p>To explore this, we:</p>
-<ol type="1">
-<li>Assembled a balanced dataset of 30‑second piano clips from public‑domain human performances (FMA, Musopen) and leading AI systems (AIVA, MuseNet, Udio, and two emergent models).<br>
-</li>
-<li>Standardized all audio to 44.1 kHz mono WAV at –23 LUFS to eliminate loudness and format confounds.<br>
-</li>
-<li>Extracted 55 signal‑level descriptors (temporal, spectral, harmonic, cepstral) to capture both low‑level synthesis artifacts and high‑level expressive traits.<br>
-</li>
-<li>Identified a subset of ten non‑redundant features via univariate hypothesis tests and three model‑based importance rankings.<br>
-</li>
-<li>Trained and evaluated both interpretable (L2‑penalized logistic regression) and performance‑oriented (random forest, ensemble, and an enhanced stacking classifier) models on these ten features, using 5‑fold cross‑validation and an 80/20 held‑out split.</li>
-</ol>
-<p>Our aim is twofold: (1) provide a deployable blueprint for automated AI‑music detection and (2) illuminate the signal‑level qualities that define human musical expression.</p>
+<p>The rapid advancement of generative AI models has significantly lowered the barrier for creating music, raising concerns about transparency, authenticity, and impacts on human composers. Commercial streaming platforms currently lack reliable methods to differentiate between machine-generated and human-performed tracks, which may negatively affect listener trust and disadvantage musicians .</p>
+<p>For instance, the widespread popularity of AI-produced albums, such as the recent viral success of The Velvet Sundown in June 2025, demonstrates the increasing prevalence and sophistication of AI-generated music. Although many AI-produced works can be easily identified through visual or contextual clues, automated detection based solely on audio remains challenging, particularly when controlling for confounding factors such as instrumentation, style, and mixing.</p>
+<p>This study addresses a specific aspect of this broader challenge by investigating whether standard acoustic features can reliably distinguish between human-performed and AI-generated solo piano music. Solo piano excerpts were chosen specifically to control for differences in instrumentation, ensemble size, and production effects, providing a clearer basis for analysis.</p>
+<p>A balanced dataset of 722 piano clips (361 human, 361 AI) was compiled from public-domain performances (FMA, Musopen) and several generative models (AIVA, MuseNet, Udio, and two additional emergent systems). All clips were standardized (44.1 kHz mono WAV at –23 LUFS), and we extracted 55 acoustic descriptors covering spectral, temporal, harmonic, and cepstral domains. Statistical testing and model-based rankings then yielded a subset of ten non-redundant, informative features. Finally those features were used to train and evaluate a calibrated stacking ensemble classifier via 5-fold cross-validation and a held-out test set (80/20 split).</p>
 <p>.</p>
 </section>
 <section id="background" class="level1">
 <h1>Background</h1>
+<p>Differentiating AI-generated from human-composed music is a growing focus of research, spanning both listener perception and computational detection methods. Recent perceptual studies (Collins et al., 2023; Sarmento et al., 2024) have found that listeners generally struggle to distinguish AI-generated music from human-performed pieces, yet tend to express a clear preference for human performances.</p>
+<p>Computational detection techniques have achieved strong results. For example, deep neural networks trained directly on audio spectrograms (Afchar et al., 2025; Vernet et al., 2025) and transformer-based methods (Independent Project, 2022) have reported accuracies above 95%. However, these approaches typically lack transparency due to their complexity and reliance on abstract learned representations.</p>
+<p>Alternatively, simpler acoustic features derived directly from audio signals offer greater interpretability. Features such as spectral centroids and Mel-Frequency Cepstral Coefficients (MFCCs) effectively describe differences in timbre between AI-generated and human-played music (Dervakos et al., 2021). Temporal descriptors, including tempo variability and onset rate, reflect human expressive timing patterns and subtle rhythmic fluctuations (Flexer et al., 2006; Sarmento et al., 2024). Harmonic descriptors (e.g., Tonnetz features, chroma balance) further characterize structural differences in tonal and harmonic organization.</p>
+<p>This current project aims to contribute to the current research by focusing on the differences in acoustic features between AI-generated and human-composed 30 second solo piano pieces, and to create a classification model that is able to reliably predict whether or not a 30 second solo piano piece is AI-generated or composed by a human.</p>
 </section>
 <section id="methods" class="level1">
 <h1>Methods</h1>
+<p>Data Acquisition.</p>
+<p>Data for this project was gathered from multiple sources. The human-composed solo piano music was gathered from two different open source music archives including: Free Music Archive, and Musopen. The AI-generated music was manually sourced by utilizing free web based AI music generators: AIVA, Suno, Udio, Riffusion, and deepAI. To be included in the dataset every piece had to be of a certain quality and only contain sounds coming from a piano. Pieces that included background noise, audio distortions, or if the music was faint, meant that the piece did not meet the quality standards to be included in the data set.</p>
+<p>While the human-composed solo piano pieces already existed, the AI-generated music was generated solely for the purpose of this project. The AI-generated pieces were all generated via a prompt such as “solo piano, only piano,” and other key words with the intention of reflecting the human-composed music used in the dataset. Prompts such as this were used because it led to more pieces containing only piano than more descriptive prompts. The reason the pieces were generated for this project was to minimize the fact that we would not know how the pieces were generated. Data Processing</p>
+<p>After downloading human and AI-generated solo piano pieces from their respective sources, several preprocessing steps were taken to prepare a consistent and balanced dataset. A Python script was utilized to standardize each audio file to mono 16-bit WAV format at 44.1 kHz sampling rate and normalized loudness to -23 LUFS, eliminating differences related to audio quality and loudness. To ensure sufficient sample size and balanced representation, especially since AI-generated pieces tended to be shorter, we randomly extracted up to four 30-second excerpts from each AI-generated track, and up to two excerpts from each human-performed track. These excerpts were selected by dividing each piece into non-overlapping excerpts and randomly sampling among them.</p>
+<p>From each excerpt, we extracted a variety of acoustic features covering four broad categories. Spectral features capture the overall sound color or timbre of the piano, reflecting characteristics such as brightness and tonal complexity. Temporal features describe rhythmic and timing aspects, such as how consistently or expressively the performer maintains tempo. Harmonic features quantify the musical relationships between notes and chords, providing insights into the structural and tonal qualities of the music. Finally, cepstral features represent subtle variations in sound texture, helping to distinguish nuanced differences in tone and articulation between human and AI performances. Collectively, these acoustic features allowed us to systematically characterize the musical differences between human-performed and AI-generated piano excerpts. The resulting data set includes 58 acoustic features from a balanced number of 722 30 second excerpts, 361 of which were AI-generated excerpts and 361 of which were human-composed excerpts.</p>
+<p>Feature Selection &amp; Statistical Analysis</p>
+<p>Used in the final models was a group of ten features. Table 1 provides an overview of these features and their definitions.</p>
+<p>To identify a concise and informative subset of acoustic features, we employed a rigorous, two-step selection approach that combined statistical hypothesis testing and model-based importance rankings.</p>
+<p>First, we used several univariate statistical tests, Welch’s t-tests, point-biserial correlations, and one-way ANOVA with post-hoc Tukey HSD, to measure the strength and consistency of differences between human-composed and AI-generated piano excerpts. Welch’s t-test was chosen because it robustly handles unequal variances and unequal sample sizes between groups. The point-biserial correlation, shown in Figure 2, quantified the strength of the linear relationship between each feature and the binary outcome (human or AI). The ANOVA (with Tukey post-hoc tests) confirmed statistically significant differences between group means while adjusting for multiple comparisons. Figure 1 displays the standardized mean differences of the final features that were selected, and whether or not the means are higher in the AI or human-composed classes.</p>
+<p>Next, we compared feature rankings from three complementary methods, as shown in Figure 3. On the left, Cohen’s d quantifies each feature’s standardized effect size between human and AI clips, providing a model-agnostic measure of group differences. In the center, the absolute coefficients from an L1-penalized logistic regression pick out features with the strongest linear contributions to classification, enforcing sparsity to highlight only the most robust predictors. On the right, Random Forest Gini importance captures non-linear effects and interactions by measuring how much each feature reduces impurity across the ensemble’s decision trees. Including Cohen’s d alongside these model-based scores ensures we retain features that exhibit large, consistent differences in the raw data, even before any model fitting.</p>
+<p>Features were prioritized based on how consistently they ranked in the top 10 across multiple methods. However, it was important to keep in mind feature redundancy which we discuss in the next section.</p>
+<p>Feature Redundancy Check and Final Selection Criteria</p>
+<p>To reduce multicollinearity and improve interpretability, we computed pairwise Pearson correlations, Figure 4, among all top-ranked features and enforced a threshold of |r| &lt; 0.7, meaning no two selected features could be too closely correlated. The only exception was spectral_bandwidth_mean and spectral_centroid_mean, which were moderately correlated (r ≈ 0.73) but retained due to their distinct acoustic interpretations: bandwidth reflects spread of energy across frequencies, while centroid captures perceived brightness.</p>
+<p>This filtering step ensured that our final subset of ten acoustic features was both non-redundant and consistently predictive. Exploratory Visualization with Selected Features</p>
+<p>To gain intuition about the separability of human-performed versus AI-generated piano excerpts in our selected feature space, we projected the ten features into two dimensions using t-distributed Stochastic Neighbor Embedding (t-SNE). As shown in Figure 4, each point represents a 30-second clip, colored yellow for humans and purple for AI.</p>
+<p>Although the two classes are not perfectly separated—which reflects the inherent overlap in some acoustic characteristics—you can see distinct “pockets” where human excerpts cluster (often those with more expressive timing fluctuations and narrower spectral spreads) and where AI clips cluster (tending toward steadier tempi and broader spectral energy). This partial clustering confirms that our ten features capture meaningful differences, and it motivates the use of a supervised model to formalize the discrimination.</p>
+<p>We observed that some AI-generated excerpts fell into the same regions of the t-SNE plot as human performances, but we did not identify any clear, consistent reason why certain clips overlapped while others did not. No single feature or platform fully explains these overlaps, suggesting that both human and AI outputs can share similar acoustic profiles under certain conditions. At this stage, we conclude that the occasional intermingling of clusters reflects natural variation in playing style and generative model behavior rather than a systematic bias in our feature set.</p>
 </section>
-<section id="data" class="level1">
-<h1>Data</h1>
+<section id="data-engineering" class="level1">
+<h1>Data Engineering</h1>
+<p>We organized our dataset into three clearly defined tables, each stored separately to facilitate straightforward analysis without unnecessary merging. A metadata table was created to ensure traceability and reproducibility. Every audio excerpt was assigned a unique identifier, linking it consistently across tables and enabling accurate referencing of the original sources and associated features.</p>
+<p>The full dataset was generated directly by a Python script that extracted 58 acoustic features from each audio clip. This dataset preserved all raw features without alteration, providing a comprehensive view of each excerpt’s acoustic profile.</p>
+<p>Lastly, a streamlined final feature dataset was created, containing only the ten features identified as most predictive during feature selection. This reduced dataset served as the primary input for modeling, ensuring clarity, interpretability, and computational efficiency.</p>
 </section>
 <section id="results" class="level1">
 <h1>Results</h1>
+<p>Dataset Summary</p>
+<p>The final dataset contained 722 thirty-second solo piano excerpts, evenly split between human-composed (n = 361) and AI-generated (n = 361) excerpts. Human recordings were drawn from public-domain libraries (FMA and Musopen) spanning classical, jazz and contemporary styles. AI-generated examples came from four systems (AIVA, Udio and two emergent models) to capture a range of algorithmic approaches. All source tracks exceeded 30 seconds, and metadata (platform, license, creator or generator name) was recorded for trace-ability.</p>
+<p>Model Choice and Pipeline</p>
+<p>Initial experiments with individual classifiers (logistic regression, random forest, gradient boosting) revealed trade-offs between interpretability and performance. We ultimately settled on a stacking model combining calibrated logistic regression, random forest (100 trees, max_depth = 5), gradient boosting, and naïve Bayes base learners. Pairwise interaction terms were added via second-degree polynomial features, and a logistic regression meta-learner was used to integrate their outputs. Stratified five-fold cross-validation guided hyperparameter selection and helped limit overfitting, while a final hold-out evaluation provided an unbiased assessment.</p>
+<p>Model Evaluation</p>
+<p>Table 2 presents the results of the stacking model on the 20% hold-out test set.</p>
+<p>Figure 5 shows the results of the classifier.</p>
+<p>Report Train Accuracy</p>
+<p>The ROC curve for the model is shown in Figure 6, it shows that the area under the curve is 0.924. This means that the model has a 92.4% chance of classifying an excerpt correctly.</p>
+<p>Both classes had the same F1 score (0.82), and ROC-AUC was particularly informative as it evaluates ranking performance independently of any threshold.</p>
+<ol start="4" type="1">
+<li>Error Analysis</li>
+</ol>
+<p>To explore where the model was less certain, we reviewed the five most extreme misclassifications in each category. Figure 7 shows the instances where the classification resulted in an AI-generated excerpt was incorrectly labeled as a human-composed excerpt, a false positive, and also where the classification resulted in a human-composed excerpt being incorrectly labeled as an AI-generated excerpt, a false negative.</p>
+<p>These AI excerpts combined wide spectral bandwidth with sparse timing cues, suggesting the model sometimes weighed rhythm more heavily than timbre. Some human excerpts showed very steady tempo or average chroma balance, making them more similar to AI-generated clips.</p>
+<p>Overall, these results indicate that the stacking approach can distinguish human from AI piano excerpts reasonably well, while also highlighting specific acoustic conditions that blur the model’s decision boundary.</p>
 </section>
 <section id="conclusions" class="level1">
 <h1>Conclusions</h1>
+<p>Discussion</p>
+<p>In this work, we developed a transparent, feature-based pipeline to distinguish 30-second solo piano excerpts as human-composed or AI-generated. By starting with a balanced dataset of 722 excerpts and extracting 55 acoustic descriptors, we used statistical tests and model-based rankings to hone in on a non-redundant set of ten features. Our enhanced stacking ensemble, combining calibrated logistic regression, random forest, gradient boosting, and naïve Bayes with interaction terms, achieved 82.1 % accuracy (0.924 ROC-AUC) on held-out data. While these results are encouraging, our primary goal is to illuminate which acoustic cues reliably signal “humanness” in piano performance.</p>
+<p>Acoustic Cues of “Humanness”</p>
+<p>Three features consistently emerged as the strongest discriminators. Spectral bandwidth (spread of energy across frequencies) reflects the balance between clarity and richness in tone that human pianists naturally produce. Tempo variability (standard deviation of tempo) captures subtle rubato and expressive timing that many AI generators still lack. Chroma balance (distribution of pitch-class energy) quantifies harmonic nuances, variations in chord voicings and tonal emphasis, that distinguish human touch from algorithmic output. Together, these cues represent dynamic, rhythmic, and harmonic dimensions of musical expressivity.</p>
+<p>Error Modes and Model Boundaries</p>
+<p>The error analysis revealed two principal misclassification patterns. Some AI-generated clips with sparse, rubato-like onset patterns but very wide spectral bandwidths were mistaken as human, suggesting the model sometimes places heavier weight on temporal cues at the expense of timbral signals. Conversely, highly steady human performances with narrow tempo variation or average chroma balance occasionally resembled AI clips, indicating that over-mechanical human playing can trigger false positives. These insights highlight where the model’s decision boundary could be refined by integrating additional temporal dynamics or pedaling artifacts, for instance.</p>
+<p>Data Ethics</p>
+<p>We recognize that building and deploying an AI-music detector carries a range of ethical considerations. First, our human recordings were drawn exclusively from public-domain collections (FMA, Musopen) under clear licensing terms, ensuring that no private or proprietary performances were used without permission. Nonetheless, these collections may not fully represent the diversity of piano traditions or performer backgrounds, and applying our model outside this narrow scope could introduce stylistic or cultural biases.</p>
+<p>Misclassification also poses real risks: falsely labeling a human performance as AI-generated could unfairly damage an artist’s reputation, while failing to flag AI content may enable misuse or misattribution. To mitigate these harms, any automated predictions should be accompanied by confidence scores and, where possible, reviewed by human experts before taking action.</p>
+<p>We further acknowledge that publishing the specific acoustic markers of “humanness” may contribute to a technological arms race: AI developers could use these insights to refine their generative models, reducing the effectiveness of static detectors. As a result, detection methods will need continuous updating, community-driven countermeasures, and transparent sharing of data and code. By open-sourcing our feature-selection pipeline, model configurations, and evaluation data, we aim to foster collaborative auditing and improvement, while emphasizing that our classifier is intended as a research prototype, not a final arbiter of musical authenticity.</p>
+<p>We also see a problem with the products like Suno, AIVA, etc. in the fact that some have noted that the content they produce is based on training data which can replicate the sound of human artists which can be considered close to copyright infringement. Directions for Future Work</p>
+<p>To broaden applicability, future studies should incorporate MIDI/symbolic data for note-level analysis (voice-leading, chord progressions) alongside audio features. Enhancing temporal modeling with metrics like onset-interval autocorrelation or beat-synchronous energy flows could improve sensitivity to expressive phrasing. Hybrid approaches that integrate easy to interpret features with lightweight neural embeddings (e.g., timbral autoencoders) may capture subtler spectral artifacts. Finally, evaluating the pipeline on unseen AI systems and “in-the-wild” streaming data, using nested cross-validation to guard against overfitting, will be critical for real-world deployment.</p>
+<p>By clearly identifying which acoustic characteristics drive classification and acknowledging both technical and ethical challenges, we offer a replicable foundation for ongoing work in automated AI-music detection, helping to support listener trust and fair recognition of human artistry.</p>
 </section>
 
 </main>
 <!-- /main column -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
-    // Ensure there is a toggle, if there isn't float one in the top right
-    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
-      const a = window.document.createElement('a');
-      a.classList.add('top-right');
-      a.classList.add('quarto-color-scheme-toggle');
-      a.href = "";
-      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
-      const i = window.document.createElement("i");
-      i.classList.add('bi');
-      a.appendChild(i);
-      window.document.body.appendChild(a);
-    }
-    setColorSchemeToggle(hasAlternateSentinel())
     const icon = "";
     const anchorJS = new window.AnchorJS();
     anchorJS.options = {
