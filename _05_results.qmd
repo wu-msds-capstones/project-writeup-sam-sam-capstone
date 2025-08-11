@@ -2,7 +2,7 @@
 
 Dataset Summary
 
-The final dataset contained 722 thirty-second solo piano excerpts, evenly split between human-composed (n = 361) and AI-generated (n = 361) excerpts. Human recordings were drawn from public-domain libraries (FMA and Musopen) spanning classical, jazz and contemporary styles. AI-generated examples came from four systems (AIVA, Udio and two emergent models) to capture a range of algorithmic approaches. All source tracks exceeded 30 seconds, and metadata (platform, license, creator or generator name) was recorded for traceability.
+The final dataset contained 722 thirty-second solo piano excerpts, evenly split between human-composed (n = 361) and AI-generated (n = 361) excerpts. Human recordings were drawn from public-domain libraries (FMA and Musopen) spanning classical, jazz and contemporary styles. AI-generated examples came from four systems (AIVA, Udio and two emergent models) to capture a range of algorithmic approaches. All source tracks exceeded 30 seconds, and metadata (platform, license, creator or generator name) was recorded for trace-ability.
 
 Model Choice and Pipeline
 

@@ -1,5 +1,5 @@
 # Methods
-Data Acquisition
+Data Acquisition. 
 
 Data for this project was gathered from multiple sources. The human-composed solo piano music was gathered from two different open source music archives including: Free Music Archive, and Musopen. The AI-generated music was manually sourced by utilizing free web based AI music generators: AIVA, Suno, Udio, Riffusion, and deepAI. To be included in the dataset every piece had to be of a certain quality and only contain sounds coming from a piano. Pieces that included background noise, audio distortions, or if the music was faint, meant that the piece did not meet the quality standards to be included in the data set.
 

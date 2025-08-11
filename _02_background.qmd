@@ -1,4 +1,5 @@
 # Background
+
 Differentiating AI-generated from human-composed music is a growing focus of research, spanning both listener perception and computational detection methods. Recent perceptual studies (Collins et al., 2023; Sarmento et al., 2024) have found that listeners generally struggle to distinguish AI-generated music from human-performed pieces, yet tend to express a clear preference for human performances.
 
 Computational detection techniques have achieved strong results. For example, deep neural networks trained directly on audio spectrograms (Afchar et al., 2025; Vernet et al., 2025) and transformer-based methods (Independent Project, 2022) have reported accuracies above 95%. However, these approaches typically lack transparency due to their complexity and reliance on abstract learned representations.

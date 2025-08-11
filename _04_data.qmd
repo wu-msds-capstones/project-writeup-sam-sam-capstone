@@ -1,7 +1,7 @@
 # Data Engineering
 
 We organized our dataset into three clearly defined tables, each stored separately to facilitate straightforward analysis without unnecessary merging.
-A metadata table was created to ensure traceability and reproducibility. Every audio excerpt was assigned a unique identifier, linking it consistently across tables and enabling accurate referencing of the original sources and associated features.
+A metadata table was created to ensure traceability and reproducibility. Every audio excerpt was assigned a unique identifier, linking it consistently across tables and enabling accurate referencing of the original sources and associated features. 
 
 The full dataset was generated directly by a Python script that extracted 58 acoustic features from each audio clip. This dataset preserved all raw features without alteration, providing a comprehensive view of each excerpt’s acoustic profile.
 

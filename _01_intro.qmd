@@ -1,6 +1,6 @@
 ## Introduction
 
-The rapid advancement of generative AI models has significantly lowered the barrier for creating music, raising concerns about transparency, authenticity, and impacts on human composers. Commercial streaming platforms currently lack reliable methods to differentiate between machine-generated and human-performed tracks, which may negatively affect listener trust and disadvantage musicians.
+The rapid advancement of generative AI models has significantly lowered the barrier for creating music, raising concerns about transparency, authenticity, and impacts on human composers. Commercial streaming platforms currently lack reliable methods to differentiate between machine-generated and human-performed tracks, which may negatively affect listener trust and disadvantage musicians  .
 
 For instance, the widespread popularity of AI-produced albums, such as the recent viral success of The Velvet Sundown in June 2025, demonstrates the increasing prevalence and sophistication of AI-generated music. Although many AI-produced works can be easily identified through visual or contextual clues, automated detection based solely on audio remains challenging, particularly when controlling for confounding factors such as instrumentation, style, and mixing.
 
