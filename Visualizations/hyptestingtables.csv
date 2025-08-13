@@ -1,0 +1,11 @@
+Feature,t-stat,p-value (t),F-stat,p-value (ANOVA),Cohen's d
+spectral_bandwidth_mean,9.032,0.0,81.574,0.0,0.672
+tempo_std,7.521,0.0,56.563,0.0,0.56
+chroma_stft_mean,7.165,0.0,51.343,0.0,0.533
+onset_rate,-6.28,0.0,39.442,0.0,0.467
+mfcc_3_mean,4.925,0.0,24.255,0.0,0.367
+spectral_centroid_mean,4.721,0.0,22.285,0.0,0.351
+mfcc_5_mean,-3.664,0.0003,13.427,0.0003,0.273
+tonnetz_3_mean,-3.629,0.0003,13.169,0.0003,0.27
+tonnetz_6_mean,3.454,0.0006,11.932,0.0006,0.257
+mfcc_delta2_13_mean,-3.173,0.0016,10.067,0.0016,0.236

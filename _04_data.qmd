@@ -1,8 +1,587 @@
-# Data Engineering
+```{python}
+#| label: setup
+#| echo: false
+#| include: false
+#| warning: false
+#| message: false
 
-We organized our dataset into three clearly defined tables, each stored separately to facilitate straightforward analysis without unnecessary merging.
-A metadata table was created to ensure traceability and reproducibility. Every audio excerpt was assigned a unique identifier, linking it consistently across tables and enabling accurate referencing of the original sources and associated features. 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from pathlib import Path
 
-The full dataset was generated directly by a Python script that extracted 58 acoustic features from each audio clip. This dataset preserved all raw features without alteration, providing a comprehensive view of each excerpt’s acoustic profile.
+from sklearn.model_selection import train_test_split, StratifiedKFold, RandomizedSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, StackingClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,
+    confusion_matrix, ConfusionMatrixDisplay, classification_report
+)
 
-Lastly, a streamlined final feature dataset was created, containing only the ten features identified as most predictive during feature selection. This reduced dataset served as the primary input for modeling, ensuring clarity, interpretability, and computational efficiency.
+from scipy.stats import ttest_ind, pointbiserialr
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+from pandas.api.types import is_numeric_dtype
+
+# Load dataset (relative path so it works on all systems)
+from pathlib import Path
+candidates = [Path("data/all_features2.csv"),
+              Path("all_features2.csv"),
+              Path("/Users/sambeilenson/Documents/Capstone/Tests/all_features2.csv")]
+for p in candidates:
+    if p.exists():
+        df = pd.read_csv(p)
+        break
+else:
+    raise FileNotFoundError("CSV not found; place it in repo (e.g., data/all_features2.csv).")
+
+
+# Normalize platform names
+df.replace({r'(?i)samt': 'Musopen', r'(?i)museopen': 'Musopen'}, regex=True, inplace=True)
+
+# Extract platform for summary tables
+df['platform'] = df['source_file'].str.split('/', expand=True)[1].str.title()
+
+# Final features and labels
+final_feats = [
+    'spectral_bandwidth_mean', 'tempo_std', 'chroma_stft_mean', 'onset_rate',
+    'mfcc_3_mean', 'spectral_centroid_mean', 'mfcc_5_mean',
+    'tonnetz_3_mean', 'tonnetz_6_mean', 'mfcc_delta2_13_mean'
+]
+
+feature_label_map = {
+    'spectral_bandwidth_mean': 'Spectral Bandwidth (Mean)',
+    'tempo_std': 'Tempo Standard Deviation',
+    'chroma_stft_mean': 'Chroma STFT (Mean)',
+    'onset_rate': 'Onset Rate',
+    'mfcc_3_mean': 'MFCC Coefficient 3 (Mean)',
+    'spectral_centroid_mean': 'Spectral Centroid (Mean)',
+    'mfcc_5_mean': 'MFCC Coefficient 5 (Mean)',
+    'tonnetz_3_mean': 'Tonnetz Dimension 3 (Mean)',
+    'tonnetz_6_mean': 'Tonnetz Dimension 6 (Mean)',
+    'mfcc_delta2_13_mean': '2nd-Order MFCC Delta 13 (Mean)'
+}
+
+# Split data
+X = df[final_feats]
+y = df['label']
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, stratify=y, test_size=0.2, random_state=42
+)
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+# Base learners
+pipe_lr = Pipeline([('scale', StandardScaler()), ('clf', LogisticRegression(solver='liblinear', random_state=42))])
+pipe_rf = Pipeline([('scale', StandardScaler()), ('clf', RandomForestClassifier(random_state=42))])
+pipe_gb = Pipeline([('scale', StandardScaler()), ('clf', GradientBoostingClassifier(random_state=42))])
+pipe_nb = Pipeline([('scale', StandardScaler()), ('clf', GaussianNB())])
+
+# Tune LR, RF, GB
+rs_lr = RandomizedSearchCV(pipe_lr, {'clf__penalty': ['l1', 'l2'], 'clf__C': np.logspace(-3, 3, 7)},
+                           n_iter=20, cv=cv, scoring='roc_auc', random_state=42, n_jobs=-1).fit(X_train, y_train)
+rs_rf = RandomizedSearchCV(pipe_rf, {'clf__n_estimators': [50, 100, 200], 'clf__max_depth': [3, 5, 10, None],
+                                     'clf__min_samples_split': [2, 5, 10]},
+                           n_iter=20, cv=cv, scoring='roc_auc', random_state=42, n_jobs=-1).fit(X_train, y_train)
+rs_gb = RandomizedSearchCV(pipe_gb, {'clf__n_estimators': [50, 100, 200], 'clf__learning_rate': [0.01, 0.1, 0.2],
+                                     'clf__max_depth': [3, 5, 7]},
+                           n_iter=20, cv=cv, scoring='roc_auc', random_state=42, n_jobs=-1).fit(X_train, y_train)
+
+# Fit NB
+pipe_nb.fit(X_train, y_train)
+
+# Calibrate logistic for stacking
+calibrated_lr = CalibratedClassifierCV(rs_lr.best_estimator_, cv=cv).fit(X_train, y_train)
+
+# Interaction features
+interact = Pipeline([
+    ('scale', StandardScaler()),
+    ('poly', PolynomialFeatures(degree=2, interaction_only=True, include_bias=False))
+])
+X_train_int = interact.fit_transform(X_train)
+X_test_int = interact.transform(X_test)
+
+# Final stacking model
+final_model = StackingClassifier(
+    estimators=[
+        ('lr', calibrated_lr),
+        ('rf', rs_rf.best_estimator_),
+        ('gb', rs_gb.best_estimator_),
+        ('nb', pipe_nb)
+    ],
+    final_estimator=LogisticRegression(random_state=42),
+    cv=cv,
+    passthrough=True
+)
+final_model.fit(X_train_int, y_train)
+
+# Evaluation on test set
+y_pred = final_model.predict(X_test_int)
+y_proba = final_model.predict_proba(X_test_int)[:, 1]
+metrics = {
+    'Accuracy': accuracy_score(y_test, y_pred),
+    'Precision': precision_score(y_test, y_pred),
+    'Recall': recall_score(y_test, y_pred),
+    'F1 Score': f1_score(y_test, y_pred),
+    'ROC-AUC': roc_auc_score(y_test, y_proba)
+}
+print("Final Model Evaluation:")
+print(pd.DataFrame([metrics]).round(3))
+
+# Confusion matrix (test)
+cm = confusion_matrix(y_test, y_pred)
+disp = ConfusionMatrixDisplay(cm, display_labels=['Human', 'AI'])
+fig, ax = plt.subplots(figsize=(5, 4))
+disp.plot(ax=ax, cmap='Blues', values_format='d')
+plt.title("Confusion Matrix (Test Data)")
+plt.show()
+
+# Classification report
+print(classification_report(y_test, y_pred, target_names=['Human', 'AI']))
+
+# Hypothesis tests
+all_feats = [
+    f for f in df.columns
+    if f not in {'label', 'clip_id', 'source_file', 'full_duration', 'clip_count', 'platform'}
+    and is_numeric_dtype(df[f])
+]
+
+def compute_t_tests(feats):
+    results = []
+    for feat in feats:
+        h_vals = df[df.label == 0][feat]
+        a_vals = df[df.label == 1][feat]
+        t_stat, p_val = ttest_ind(h_vals, a_vals, equal_var=False)
+        r_pb, _ = pointbiserialr(df.label, df[feat])
+        results.append((feat, round(t_stat, 3), round(p_val, 4), round(abs(r_pb), 3)))
+    return pd.DataFrame(results, columns=['feature', 't-stat', 'p-value', '|r_pb|']).sort_values('t-stat', ascending=False)
+
+def compute_anova_tukey(feats):
+    rows = []
+    for feat in feats:
+        model = ols(f"{feat} ~ C(label)", data=df).fit()
+        anova_table = sm.stats.anova_lm(model, typ=2)
+        F_val = anova_table.loc['C(label)', 'F']
+        p_val = anova_table.loc['C(label)', 'PR(>F)']
+        tukey = pairwise_tukeyhsd(endog=df[feat], groups=df.label, alpha=0.05)
+        ci_lower, ci_upper = np.nan, np.nan
+        for rec in tukey.summary().data[1:]:
+            if rec[0] == '0' and rec[1] == '1':
+                ci_lower, ci_upper = float(rec[4]), float(rec[5])
+        rows.append((feat, round(F_val, 3), round(p_val, 4), round(ci_lower, 3), round(ci_upper, 3)))
+    return pd.DataFrame(rows, columns=['feature', 'F-stat', 'p-value', 'Tukey CI lower', 'Tukey CI upper']).sort_values('F-stat', ascending=False)
+
+def compute_cohens_d(feats):
+    rows = []
+    for feat in feats:
+        h_vals = df[df.label == 0][feat]
+        a_vals = df[df.label == 1][feat]
+        n1, n2 = len(h_vals), len(a_vals)
+        pooled_sd = np.sqrt(((n1 - 1) * h_vals.var() + (n2 - 1) * a_vals.var()) / (n1 + n2 - 2))
+        d = abs((h_vals.mean() - a_vals.mean()) / pooled_sd)
+        rows.append((feat, round(d, 3)))
+    return pd.DataFrame(rows, columns=['feature', "Cohen's d"]).sort_values("Cohen's d", ascending=False)
+
+t_table = compute_t_tests(all_feats)
+anova_table = compute_anova_tukey(all_feats)
+cohend_table = compute_cohens_d(all_feats)
+
+print("\nWelch's t-tests and Point-Biserial Correlations:")
+print(t_table.to_string(index=False))
+print("\nOne-way ANOVA and Tukey HSD:")
+print(anova_table.to_string(index=False))
+print("\nCohen's d Effect Sizes:")
+print(cohend_table.to_string(index=False))
+
+# Training performance
+X_train_int = interact.transform(X_train)
+y_train_pred = final_model.predict(X_train_int)
+y_train_proba = final_model.predict_proba(X_train_int)[:, 1]
+train_metrics = {
+    'Accuracy': accuracy_score(y_train, y_train_pred),
+    'Precision': precision_score(y_train, y_train_pred),
+    'Recall': recall_score(y_train, y_train_pred),
+    'F1 Score': f1_score(y_train, y_train_pred),
+    'ROC-AUC': roc_auc_score(y_train, y_train_proba)
+}
+print("\n=== Training Performance Metrics ===")
+print(pd.DataFrame([train_metrics]).round(3))
+
+train_cm = confusion_matrix(y_train, y_train_pred)
+disp = ConfusionMatrixDisplay(train_cm, display_labels=['Human', 'AI'])
+fig, ax = plt.subplots(figsize=(5, 4))
+disp.plot(ax=ax, cmap='Blues', values_format='d')
+plt.title("Confusion Matrix (Training Data)")
+plt.show()
+
+# Training vs test comparison
+test_metrics = metrics
+comparison_df = pd.DataFrame([train_metrics, test_metrics], index=['Training', 'Test']).round(3)
+print("\n=== Training vs Test Comparison ===")
+print(comparison_df)
+
+```
+
+
+## Feature Selection & Statistical Analysis
+Used in the final models was a group of ten features. Table 1 provides an overview of these features and their definitions.
+Table 1 Features used in the final model and their definitions
+
+``` {python}
+#| label: table-1
+#| tbl-cap: "Table 1: Features used in the final model and their definitions"
+#| echo: false
+#| warning: false
+#| message: false
+
+
+import pandas as pd
+
+features_table = pd.DataFrame({
+    "Feature Name": [
+        "spectral_bandwidth_mean",
+        "tempo_std",
+        "chroma_stft_mean",
+        "onset_rate",
+        "spectral_centroid_mean",
+        "mfcc_3_mean",
+        "mfcc_5_mean",
+        "tonnetz_3_mean",
+        "tonnetz_6_mean",
+        "mfcc_delta2_13_mean"
+    ],
+    "Definition": [
+        "How wide the sound is, from low to high; higher values often mean a brighter, more complex tone.",
+        "How much the speed of the music varies; lower values mean steadier tempo, while higher values reflect more expressive or inconsistent timing.",
+        "Measures how often certain musical notes or chords show up; gives a sense of harmonic 'color'.",
+        "Counts how frequently new notes or sounds begin, like how 'busy' or active the playing is.",
+        "Where most of the sound energy is focused; higher values sound brighter, lower values sound darker.",
+        "Captures details of tone and timbre, like a fingerprint of the sound texture.",
+        "Another layer of tonal detail; helps distinguish between human and machine playing styles.",
+        "Describes how chords and tones relate; tracks harmonic movement or tension.",
+        "Also captures harmonic relationships, different from tonnetz_3 but similarly focused on musical structure.",
+        "Tracks how the tonal texture changes over time; helps identify expressive or mechanical playing shifts."
+    ]
+})
+
+# Hide index so it doesn’t show in the rendered table
+features_table.style.hide(axis="index")
+
+
+
+```
+
+To identify a concise and informative subset of acoustic features, we employed a rigorous, two-step selection approach that combined statistical hypothesis testing and model-based importance rankings.
+First, we used several univariate statistical tests, Welch’s t-tests, point-biserial correlations, and one-way ANOVA with post-hoc Tukey HSD, to measure the strength and consistency of differences between human-composed and AI-generated piano excerpts.  Welch’s t-test was chosen because it robustly handles unequal variances and unequal sample sizes between groups. 
+While some features deviated from normality under Shapiro–Wilk tests, Welch’s t-test is robust to moderate non-normality, especially with balanced samples. Point-biserial correlations are reported as descriptive effect sizes rather than formal significance tests. Sensitivity checks with nonparametric Mann–Whitney U tests produced qualitatively similar results. 
+The point-biserial correlation, shown in Figure 2, quantified the strength of the linear relationship between each feature and the binary outcome (human or AI). The ANOVA (with Tukey post-hoc tests) confirmed statistically significant differences between group means while adjusting for multiple comparisons. Figure 1 displays the standardized mean differences of the final features that were selected, and whether or not the means are higher in the AI or human-composed classes.
+
+``` {python}
+#| label: fig-smd
+#| fig-cap: "Figure 1: Standardized mean differences (Human − AI) for the ten selected features."
+#| echo: false
+#| warning: false
+#| message: false
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Signed Cohen's d (Human − AI)
+d_signed = []
+for feat in final_feats:
+    h = df[df.label == 0][feat]
+    a = df[df.label == 1][feat]
+    n1, n2 = len(h), len(a)
+    pooled_sd = np.sqrt(((n1 - 1) * h.var() + (n2 - 1) * a.var()) / (n1 + n2 - 2))
+    d_signed.append((h.mean() - a.mean()) / pooled_sd)
+
+div_df = pd.DataFrame({
+    'Feature': [feature_label_map.get(f, f) for f in final_feats],
+    'Std_Mean_Diff': d_signed
+}).set_index('Feature').sort_values('Std_Mean_Diff')
+
+fig, ax = plt.subplots(figsize=(6, 6))
+colors = ['#800080' if x > 0 else '#FFD700' for x in div_df['Std_Mean_Diff']]  # purple=Higher in Human, gold=Higher in AI
+ax.hlines(y=div_df.index, xmin=0, xmax=div_df['Std_Mean_Diff'], color=colors, linewidth=2)
+ax.scatter(div_df['Std_Mean_Diff'], div_df.index, color=colors, s=60, zorder=3)
+ax.axvline(0, color='black', linewidth=1)
+ax.set_xlabel('Standardized Mean Difference\n(Human − AI)', fontsize=12)
+ax.set_title('Standardized Mean Differences by Feature', fontsize=14, pad=12)
+plt.tight_layout()
+plt.show()
+
+
+```
+
+Figure 1. Standardized mean differences (z-score) between human and AI excerpts for the ten selected features. Positive values (purple dots) indicate features whose mean is higher in human-performed clips, while negative values (yellow dots) indicate features higher in AI-generated clips. This visualization highlights the direction and magnitude of each feature’s discriminatory power. Note: see the appendix for more details on hypothesis test outcomes.
+
+``` {python}
+#| label: pb-correlations
+#| fig-cap: "Point-Biserial Correlations for Selected Features"
+#| echo: false
+#| warning: false
+#| message: false
+
+
+
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy.stats import pointbiserialr
+import matplotlib.patches as mpatches
+
+# Use existing pretty labels if available
+pretty_pairs = [(feature_label_map.get(f, f), f) for f in final_feats]
+
+rows = []
+for pretty, feat in pretty_pairs:
+    r_pb, _ = pointbiserialr(df['label'], df[feat])  # label: 0=Human, 1=AI
+    rows.append((pretty, r_pb))
+
+pb_df = pd.DataFrame(rows, columns=['Feature', 'r_pb']).sort_values('r_pb')
+
+# Color rule: purple = higher in Human (r<0), gold = higher in AI (r>0)
+colors = ['#800080' if r < 0 else '#FFD700' for r in pb_df['r_pb']]
+
+fig, ax = plt.subplots(figsize=(11, 6))
+ax.barh(pb_df['Feature'], pb_df['r_pb'], color=colors)
+ax.axvline(0, color='black', linewidth=0.8)
+ax.set_xlabel('Point-Biserial Correlation (r_pb)')
+ax.set_title('Point-Biserial Correlations for Selected Features')
+
+human_patch = mpatches.Patch(color='#800080', label='Higher in Human')
+ai_patch    = mpatches.Patch(color='#FFD700', label='Higher in AI')
+ax.legend(handles=[human_patch, ai_patch],
+          title='Bar Color',
+          bbox_to_anchor=(1.05, 0.5),
+          loc='center left',
+          borderaxespad=0,
+          frameon=False)
+
+plt.tight_layout()
+plt.show()
+
+```
+
+Figure 2. Point-biserial correlations between each selected acoustic feature and the binary class label. Bars extending to the right (purple) indicate features with higher average values in AI-generated excerpts, while bars extending to the left (yellow) indicate features with higher average values in human-performed excerpts.
+
+Next, we compared feature rankings from three complementary methods, as shown in Figure 3. On the left, Cohen’s d quantifies each feature’s standardized effect size between human and AI clips, providing a model-agnostic measure of group differences. In the center, the absolute coefficients from an L1-penalized logistic regression pick out features with the strongest linear contributions to classification, enforcing sparsity to highlight only the most robust predictors. On the right, Random Forest Gini importance captures non-linear effects and interactions by measuring how much each feature reduces impurity across the ensemble’s decision trees. Including Cohen’s d alongside these model-based scores ensures we retain features that exhibit large, consistent differences in the raw data, even before any model fitting.
+Features were prioritized based on how consistently they ranked in the top 10 across multiple methods. However, it was important to keep in mind feature redundancy which we discuss in the next section.
+
+Figure  3 Feature-importance bar charts
+
+``` {python}
+#| label: feature-importance-panels
+#| fig-cap: "Figure 3: Top ten acoustic descriptors ranked by three complementary methods."
+#| echo: false
+#| warning: false
+#| message: false
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+
+# Style
+sns.set_theme(style="whitegrid", context="talk", font_scale=1.05)
+panel_colors = ["#6A0DAD", "#1f77b4", "#FF7F0E"]  # purple, blue, gold
+
+# Pretty labels from map
+pretty_labels = [feature_label_map.get(f, f) for f in final_feats]
+
+# 1) Cohen's d per feature
+d_vals = []
+for f in final_feats:
+    h_vals = df[df.label == 0][f]
+    a_vals = df[df.label == 1][f]
+    n1, n2 = len(h_vals), len(a_vals)
+    pooled_sd = np.sqrt(((n1 - 1) * h_vals.var() + (n2 - 1) * a_vals.var()) / (n1 + n2 - 2))
+    d_vals.append(abs((h_vals.mean() - a_vals.mean()) / pooled_sd))
+d_vals = np.array(d_vals)
+
+# 2) Logistic Regression absolute coefficients (standardized inputs)
+X_scaled = StandardScaler().fit_transform(df[final_feats])
+y_vals = df['label'].values
+lr = LogisticRegression(solver='liblinear', random_state=42).fit(X_scaled, y_vals)
+lr_imp = np.abs(lr.coef_[0])
+
+# 3) Random Forest Gini importances
+rf = RandomForestClassifier(n_estimators=100, random_state=42).fit(df[final_feats], y_vals)
+rf_imp = rf.feature_importances_
+
+# 4) Assemble importance table
+imp_df = pd.DataFrame({
+    'Feature': pretty_labels,
+    "Cohen's d": d_vals,
+    'Logistic Regression': lr_imp,
+    'Random Forest': rf_imp
+})
+
+# 5) Plot panels
+metrics = ["Cohen's d", "Logistic Regression", "Random Forest"]
+fig, axes = plt.subplots(1, 3, figsize=(21, 7), sharey=True)
+
+for ax, metric, color in zip(axes, metrics, panel_colors):
+    ordered = imp_df.sort_values(by=metric, ascending=True)
+    ax.barh(ordered['Feature'], ordered[metric], color=color, alpha=0.9)
+    ax.set_title(metric, pad=10)
+    ax.set_xlabel('Importance')
+    if ax is axes[0]:
+        ax.set_ylabel('Feature')
+    else:
+        ax.set_ylabel('')
+    for y_pos, val in enumerate(ordered[metric].values):
+        ax.text(val + (0.01 * ordered[metric].max()), y_pos, f"{val:.2f}",
+                va='center', fontsize=9)
+    ax.grid(axis='x', linestyle='--', alpha=0.35)
+    ax.margins(x=0.02)
+
+plt.tight_layout()
+plt.show()
+
+
+```
+
+Figure 3. Top ten acoustic descriptors selected from the full set of 58 features, ranked by three complementary methods.
+Left: Cohen’s d effect sizes from Welch’s t-tests; Center: absolute coefficients from an L1-penalized logistic regression; Right: Gini importances from a random forest. These paired comparisons show which features, spectral bandwidth, tempo variability, chroma balance, and others, emerged most consistently as discriminative for distinguishing human versus AI piano excerpts.
+
+Three variables emerged as especially influential in distinguishing AI-generated from human performances. Spectral bandwidth, which reflects the range of frequencies present, tended to be narrower in human recordings, with a richer midrange produced by natural pedaling and touch. In contrast, AI clips often showed unnaturally extended highs and lows resulting from synthesis. Tempo variability captured natural fluctuations in timing, human performers frequently speed up or slow down for expressive effect, whereas AI outputs were more metronomic. Chroma balance, a measure of the evenness of pitch-class use, also differed between the two groups: human players often favored certain tonal centers or voicings, while AI tended toward a more uniform distribution across keys and harmonies.
+A Chi-square test found no significant association between feature distribution and generation platform (p > 0.05), suggesting that differences are not platform-specific.
+Assumption Checks: Normality, Variance Homogeneity, and Multicollinearity
+
+Before running parametric statistical tests such as Welch’s t-tests and ANOVA, we checked whether each feature met the assumptions of normality and equal variances between AI and human groups. Shapiro–Wilk tests indicated that all features deviated from normality in at least one group (p < 0.05), so we did not assume normally distributed data. We also ran Levene’s tests for homogeneity of variances, which showed that several key features—such as spectral_bandwidth_mean, tempo_std, and mfcc_3_mean—had significantly different variances between classes. These results reinforced our choice of Welch’s t-test, which is robust to both non-normality and unequal variances, for all hypothesis testing.
+For the logistic regression model, we examined variance inflation factors (VIF) to assess multicollinearity among the ten final features. All VIF values were below the commonly used threshold of 5, indicating no problematic collinearity. This confirmed that each feature contributed unique information to the model and that coefficient estimates would remain stable and interpretable.
+
+Feature Redundancy Check and Final Selection Criteria
+To reduce multicollinearity and improve interpretability, we computed pairwise Pearson correlations, Figure 4, among all top-ranked features and enforced a threshold of |r| < 0.7, meaning no two selected features could be too closely correlated. The only exception was spectral_bandwidth_mean and spectral_centroid_mean, which were moderately correlated (r ≈ 0.73) but retained due to their distinct acoustic interpretations: bandwidth reflects spread of energy across frequencies, while centroid captures perceived brightness.
+Figure 4 Pairwise Pearson correlation heatmap for the ten final acoustic features
+
+``` {python}
+#| label: correlation-heatmap
+#| echo: false
+#| warning: false
+#| message: false
+
+
+
+import matplotlib.pyplot as plt
+
+features = final_feats
+corr = df[features].corr()
+readable_labels = [feature_label_map.get(f, f) for f in features]
+
+fig, ax = plt.subplots(figsize=(10, 8))
+im = ax.imshow(corr, cmap="coolwarm", vmin=-1, vmax=1)
+
+ax.set_xticks(range(len(readable_labels)))
+ax.set_xticklabels(readable_labels, rotation=90, fontsize=9)
+ax.set_yticks(range(len(readable_labels)))
+ax.set_yticklabels(readable_labels, fontsize=9)
+
+cbar = fig.colorbar(im, ax=ax)
+cbar.set_label("Correlation", rotation=270, labelpad=15)
+
+for i in range(len(features)):
+    for j in range(len(features)):
+        ax.text(j, i, f"{corr.iloc[i, j]:.2f}",
+                ha="center", va="center", fontsize=7, color="black")
+
+ax.set_title("Correlation Heatmap of Final Features", pad=15)
+plt.tight_layout()
+plt.show()
+```
+
+Note. Shows all off-diagonal correlations below 0.7 (except the one justified exception), confirming non-redundancy of the selected feature set
+
+This filtering step ensured that our final subset of ten acoustic features was both non-redundant and consistently predictive. 
+
+### Variance Inflation Factor (VIF) Analysis
+
+To further confirm that our selected features were not excessively collinear, we calculated Variance Inflation Factors (VIF) for each feature in the final set. VIF measures how much the variance of a regression coefficient is inflated due to multicollinearity with other predictors. A VIF of 1 indicates no correlation with other variables, while values above 5–10 are generally considered problematic.
+As shown in Table 2, all features had VIF values well below the threshold of 5, with most under 2, indicating minimal multicollinearity. This result supports our earlier Pearson correlation check (Figure 4) and provides additional assurance that each feature contributes unique information to the model without introducing instability into the coefficient estimates.
+
+
+``` {python}
+#| label: table-vif
+#| tbl-cap: "Table 2: Variance Inflation Factor (VIF) for Final Features"
+#| echo: false
+#| warning: false
+#| message: false
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+# use your canonical feature list
+features_for_vif = final_feats
+
+# standardize before VIF
+Xv = pd.DataFrame(
+    StandardScaler().fit_transform(df[features_for_vif]),
+    columns=features_for_vif
+)
+
+vif_vals = [variance_inflation_factor(Xv.values, i) for i in range(Xv.shape[1])]
+vif_data = pd.DataFrame({"Feature": features_for_vif, "VIF": vif_vals}).round(3)
+
+# hide index in render
+vif_data.style.hide(axis="index")
+
+
+
+```
+
+### Exploratory Visualization with Selected Features
+To gain intuition about the separability of human-performed versus AI-generated piano excerpts in our selected feature space, we projected the ten features into two dimensions using t-distributed Stochastic Neighbor Embedding (t-SNE). As shown in Figure 4, each point represents a 30-second clip, colored yellow for humans and purple for AI.
+
+
+``` {python}
+#| label: tsne-selected
+#| fig-cap: "Figure 4: t-SNE projection of the ten selected features (purple = Human, gold = AI)."
+#| echo: false
+#| warning: false
+#| message: false
+import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+
+# use the same feature list everywhere
+X_scaled = StandardScaler().fit_transform(df[final_feats])
+
+tsne_model = TSNE(
+    n_components=2,
+    random_state=42,
+    init='pca',
+    learning_rate='auto'
+)
+X_tsne = tsne_model.fit_transform(X_scaled)
+
+fig, ax = plt.subplots(figsize=(8, 6))
+mask_h = (df['label'] == 0)  # Human
+mask_a = (df['label'] == 1)  # AI
+
+ax.scatter(X_tsne[mask_h, 0], X_tsne[mask_h, 1], c='#800080', label='Human', alpha=0.7)
+ax.scatter(X_tsne[mask_a, 0], X_tsne[mask_a, 1], c='#FFD700', label='AI',    alpha=0.7)
+
+ax.set_xlabel('t-SNE Dimension 1')
+ax.set_ylabel('t-SNE Dimension 2')
+ax.set_title('t-SNE Projection of Selected Features')
+ax.legend(title='Class')
+plt.tight_layout()
+plt.show()
+
+
+```
+
+Figure 4. Two-dimensional t-SNE embedding of the ten selected acoustic features, with human-performed excerpts shown as yellow circles and AI-generated excerpts shown as purple circles. Pockets of yellow and purple illustrate regions where the acoustic signatures of human timing and timbre versus AI steadiness and spectral breadth tend to cluster. 
+
+While the two classes are not perfectly separated, reflecting overlap in certain acoustic traits, there are clear regions where human excerpts cluster, often marked by more expressive timing variations and narrower spectral spreads. AI-generated clips, in contrast, frequently group together in areas characterized by steadier tempi and broader spectral energy. Notably, outlier analysis revealed that most extreme cases in the AI class came from the Suno platform, which tended to produce pieces with unusually high spectral bandwidth and onset rates. These characteristics explain much of the tight clustering for Suno-generated excerpts, while other AI platforms showed more dispersion. Occasional overlaps between classes appear to stem from individual pieces whose acoustic profiles happen to align, rather than random noise, reinforcing the need for a supervised model to capture subtle but consistent distinctions across platforms.
