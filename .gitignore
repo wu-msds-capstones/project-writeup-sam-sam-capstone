@@ -3,3 +3,7 @@
 .DS_Store
 .Rhistory
 .Rproj.user/
+_freeze/
+_output/
+.DS_Store
+.Rhistory
