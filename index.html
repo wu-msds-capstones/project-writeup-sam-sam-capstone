@@ -284,7 +284,10 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#data-acquisition" id="toc-data-acquisition" class="nav-link" data-scroll-target="#data-acquisition"><span class="header-section-number">3.1</span> Data Acquisition</a></li>
   <li><a href="#data-processing" id="toc-data-processing" class="nav-link" data-scroll-target="#data-processing"><span class="header-section-number">3.2</span> Data Processing</a></li>
   <li><a href="#data-engineering" id="toc-data-engineering" class="nav-link" data-scroll-target="#data-engineering"><span class="header-section-number">3.3</span> Data Engineering</a></li>
-  <li><a href="#feature-selection-statistical-analysis" id="toc-feature-selection-statistical-analysis" class="nav-link" data-scroll-target="#feature-selection-statistical-analysis"><span class="header-section-number">3.4</span> Feature Selection &amp; Statistical Analysis</a></li>
+  <li><a href="#feature-selection-statistical-analysis" id="toc-feature-selection-statistical-analysis" class="nav-link" data-scroll-target="#feature-selection-statistical-analysis"><span class="header-section-number">3.4</span> Feature Selection &amp; Statistical Analysis</a>
+  <ul class="collapse">
+  <li><a href="#table-1.-features-used-in-the-final-model-and-their-definitions" id="toc-table-1.-features-used-in-the-final-model-and-their-definitions" class="nav-link" data-scroll-target="#table-1.-features-used-in-the-final-model-and-their-definitions"><span class="header-section-number">3.4.1</span> Table 1. Features used in the final model and their definitions</a></li>
+  </ul></li>
   <li><a href="#assumption-checks-normality-variance-homogeneity-and-multicollinearity" id="toc-assumption-checks-normality-variance-homogeneity-and-multicollinearity" class="nav-link" data-scroll-target="#assumption-checks-normality-variance-homogeneity-and-multicollinearity"><span class="header-section-number">3.5</span> Assumption Checks: Normality, Variance Homogeneity, and Multicollinearity</a></li>
   <li><a href="#feature-redundancy-check-and-final-selection-criteria" id="toc-feature-redundancy-check-and-final-selection-criteria" class="nav-link" data-scroll-target="#feature-redundancy-check-and-final-selection-criteria"><span class="header-section-number">3.6</span> Feature Redundancy Check and Final Selection Criteria</a></li>
   <li><a href="#variance-inflation-factor-vif-analysis" id="toc-variance-inflation-factor-vif-analysis" class="nav-link" data-scroll-target="#variance-inflation-factor-vif-analysis"><span class="header-section-number">3.7</span> Variance Inflation Factor (VIF) Analysis</a></li>
@@ -369,7 +372,62 @@ ul.task-list li input[type="checkbox"] {
 <section id="feature-selection-statistical-analysis" class="level2" data-number="3.4">
 <h2 data-number="3.4" class="anchored" data-anchor-id="feature-selection-statistical-analysis"><span class="header-section-number">3.4</span> Feature Selection &amp; Statistical Analysis</h2>
 <p>Used in the final models was a group of ten features. Table 1 provides an overview of these features and their definitions.</p>
-<p>Table 1. Features used in the final model and their definitions | Feature Name | Definition | |—————————–|————| | spectral_bandwidth_mean | How wide the sound is, from low to high; higher values often mean a brighter, more complex tone. | | tempo_std | How much the speed of the music varies; lower values mean steadier tempo, while higher values reflect more expressive or inconsistent timing. | | chroma_stft_mean | Measures how often certain musical notes or chords show up; gives a sense of harmonic “color.” | | onset_rate | Counts how frequently new notes or sounds begin, like how “busy” or active the playing is. | | spectral_centroid_mean | Where most of the sound energy is focused; higher values sound brighter, lower values sound darker. | | mfcc_3_mean | Captures details of tone and timbre, like a fingerprint of the sound texture. | | mfcc_5_mean | Another layer of tonal detail; helps distinguish between human and machine playing styles. | | tonnetz_3_mean | Describes how chords and tones relate; tracks harmonic movement or tension. | | tonnetz_6_mean | Also captures harmonic relationships, different from tonnetz_3 but similarly focused on musical structure. | | mfcc_delta2_13_mean | Tracks how the tonal texture changes over time; helps identify expressive or mechanical playing shifts. |</p>
+<section id="table-1.-features-used-in-the-final-model-and-their-definitions" class="level3" data-number="3.4.1">
+<h3 data-number="3.4.1" class="anchored" data-anchor-id="table-1.-features-used-in-the-final-model-and-their-definitions"><span class="header-section-number">3.4.1</span> Table 1. Features used in the final model and their definitions</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 70%">
+<col style="width: 29%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Feature Name</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>spectral_bandwidth_mean</td>
+<td>How wide the sound is, from low to high; higher values often mean a brighter, more complex tone.</td>
+</tr>
+<tr class="even">
+<td>tempo_std</td>
+<td>How much the speed of the music varies; lower values mean steadier tempo, while higher values reflect more expressive or inconsistent timing.</td>
+</tr>
+<tr class="odd">
+<td>chroma_stft_mean</td>
+<td>Measures how often certain musical notes or chords show up; gives a sense of harmonic “color.”</td>
+</tr>
+<tr class="even">
+<td>onset_rate</td>
+<td>Counts how frequently new notes or sounds begin, like how “busy” or active the playing is.</td>
+</tr>
+<tr class="odd">
+<td>spectral_centroid_mean</td>
+<td>Where most of the sound energy is focused; higher values sound brighter, lower values sound darker.</td>
+</tr>
+<tr class="even">
+<td>mfcc_3_mean</td>
+<td>Captures details of tone and timbre, like a fingerprint of the sound texture.</td>
+</tr>
+<tr class="odd">
+<td>mfcc_5_mean</td>
+<td>Another layer of tonal detail; helps distinguish between human and machine playing styles.</td>
+</tr>
+<tr class="even">
+<td>tonnetz_3_mean</td>
+<td>Describes how chords and tones relate; tracks harmonic movement or tension.</td>
+</tr>
+<tr class="odd">
+<td>tonnetz_6_mean</td>
+<td>Also captures harmonic relationships, different from tonnetz_3 but similarly focused on musical structure.</td>
+</tr>
+<tr class="even">
+<td>mfcc_delta2_13_mean</td>
+<td>Tracks how the tonal texture changes over time; helps identify expressive or mechanical playing shifts.</td>
+</tr>
+</tbody>
+</table>
 <p>To identify a concise and informative subset of acoustic features, we employed an approach that combined statistical hypothesis testing and model-based importance rankings.</p>
 <p>First, we used several univariate statistical tests, Welch’s <em>t</em>-tests, point-biserial correlations, and one-way ANOVA with post-hoc Tukey HSD, to measure the strength and consistency of differences between human-composed and AI-generated piano excerpts. Welch’s <em>t</em>-test was chosen because it robustly handles unequal variances and unequal sample sizes between groups.</p>
 <p>While some features deviated from normality under Shapiro–Wilk tests, Welch’s <em>t</em>-test is robust to moderate non-normality, especially with balanced samples. Point-biserial correlations are reported as descriptive effect sizes rather than formal significance tests. Sensitivity checks with nonparametric Mann–Whitney U tests produced qualitatively similar results.</p>
@@ -407,6 +465,7 @@ Figure&nbsp;3: Top ten acoustic descriptors selected from the full set of 58 fea
 </div>
 <p>Three variables emerged as especially influential in distinguishing AI-generated from human performances. Spectral bandwidth, which reflects the range of frequencies present, tended to be narrower in human recordings, with a richer midrange produced by natural pedaling and touch. In contrast, AI clips often showed unnaturally extended highs and lows resulting from synthesis. Tempo variability captured natural fluctuations in timing, human performers frequently speed up or slow down for expressive effect, whereas AI outputs were more metronomic. Chroma balance, a measure of the evenness of pitch-class use, also differed between the two groups: human players often favored certain tonal centers or voicings, while AI tended toward a more uniform distribution across keys and harmonies.</p>
 <p>A Chi-square test found no significant association between feature distribution and generation platform (p &gt; 0.05), suggesting that differences are not platform-specific.</p>
+</section>
 </section>
 <section id="assumption-checks-normality-variance-homogeneity-and-multicollinearity" class="level2" data-number="3.5">
 <h2 data-number="3.5" class="anchored" data-anchor-id="assumption-checks-normality-variance-homogeneity-and-multicollinearity"><span class="header-section-number">3.5</span> Assumption Checks: Normality, Variance Homogeneity, and Multicollinearity</h2>
