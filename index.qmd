@@ -2,38 +2,33 @@
 title: "Capstone Project"
 subtitle: Subtitle
 authors:
-  - Sam
+  - Sam Beilenson
+  - Sam Twenhafel
 title-block-banner: true
 abstract: >
   Distinguishing AI-generated from human-performed music is challenging due to differences in instrumentation, style, and production techniques. To minimize these confounding factors, we focused exclusively on 30-second solo piano excerpts, assembling a balanced dataset of 722 clips (361 human, 361 AI). After extracting acoustic descriptors related to spectral content, rhythm, harmony, and timbre, we identified ten highly predictive features through statistical testing and model-based selection. We trained an enhanced stacking ensemble classifier combining logistic regression, random forest, gradient boosting, and naïve Bayes methods. On an unseen hold-out set, the stacking model achieved an accuracy of 82.1% (ROC-AUC 0.924). The strongest predictors included spectral bandwidth, tempo variability, and chroma balance, highlighting clear acoustic signatures associated with human musical performance. These findings offer a transparent and scalable foundation for automated detection of AI-generated music.
 format:
   html:
-    theme:
-      light: lightly
-      dark: darkly
     toc: true
     number-sections: true
+    theme: cosmo
 ---
 
 # Introduction
 
 The rapid advancement of generative AI models has significantly lowered the barrier for creating music, raising concerns about transparency, authenticity, and impacts on human composers. Commercial streaming platforms currently lack reliable methods to differentiate between machine-generated and human-performed tracks, which may negatively affect listener trust and disadvantage musicians.
-
-For instance, the widespread popularity of AI-produced albums, such as the recent viral success of *The Velvet Sundown* in June 2025, demonstrates the increasing prevalence and sophistication of AI-generated music. Although many AI-produced works can be easily identified through visual or contextual clues, automated detection based solely on audio remains challenging, particularly when controlling for confounding factors such as instrumentation, style, and mixing.
-
+For instance, the widespread popularity of AI-produced albums, such as the recent viral success of The Velvet Sundown in June 2025, demonstrates the increasing prevalence and sophistication of AI-generated music. Although many AI-produced works can be easily identified through visual or contextual clues, automated detection based solely on audio remains challenging, particularly when controlling for confounding factors such as instrumentation, style, and mixing.
 This study addresses a specific aspect of this broader challenge by investigating whether standard acoustic features can reliably distinguish between human-performed and AI-generated solo piano music. Solo piano excerpts were chosen specifically to control for differences in instrumentation, ensemble size, and production effects, providing a clearer basis for analysis.
+A balanced dataset of 722 piano clips (361 human, 361 AI) was compiled from public-domain performances (FMA, Musopen) and several generative models (AIVA, MuseNet, Udio, and two additional emergent systems). All clips were standardized (44.1 kHz mono WAV at –23 LUFS), and we extracted 55 acoustic descriptors covering spectral, temporal, harmonic, and cepstral domains. Statistical testing and model-based rankings then yielded a subset of ten non-redundant, informative features. Finally those features were used to train and evaluate a calibrated stacking ensemble classifier via 5-fold cross-validation and a held-out test set (80/20 split).
 
-A balanced dataset of 722 piano clips (361 human, 361 AI) was compiled from public-domain performances (FMA, Musopen) and several generative models (AIVA, MuseNet, Udio, and two additional emergent systems). All clips were standardized (44.1 kHz mono WAV at –23 LUFS), and we extracted 55 acoustic descriptors covering spectral, temporal, harmonic, and cepstral domains. Statistical testing and model-based rankings then yielded a subset of ten non-redundant, informative features. Finally, those features were used to train and evaluate a calibrated stacking ensemble classifier via 5-fold cross-validation and a held-out test set (80/20 split).
 
 # Background
-
 Differentiating AI-generated from human-composed music is a growing focus of research, spanning both listener perception and computational detection methods. Recent perceptual studies (Collins et al., 2023; Sarmento et al., 2024) have found that listeners generally struggle to distinguish AI-generated music from human-performed pieces, yet tend to express a clear preference for human performances.
-
 Computational detection techniques have achieved strong results. For example, deep neural networks trained directly on audio spectrograms (Afchar et al., 2025; Vernet et al., 2025) and transformer-based methods (Independent Project, 2022) have reported accuracies above 95%. However, these approaches typically lack transparency due to their complexity and reliance on abstract learned representations.
-
 Alternatively, simpler acoustic features derived directly from audio signals offer greater interpretability. Features such as spectral centroids and Mel-Frequency Cepstral Coefficients (MFCCs) effectively describe differences in timbre between AI-generated and human-composed music (Dervakos et al., 2021). Temporal descriptors, including tempo variability and onset rate, reflect human expressive timing patterns and subtle rhythmic fluctuations (Flexer et al., 2006; Sarmento et al., 2024). Harmonic descriptors (e.g., Tonnetz features, chroma balance) further characterize structural differences in tonal and harmonic organization.
+This current project aims to contribute to the current research by focusing on the differences in acoustic features between AI-generated and human-composed 30 second solo piano pieces, and to create a classification model that is able to reliably predict whether or not a 30 second solo piano piece is AI-generated or composed by a human. We hypothesized that human performances would exhibit greater variability in timing and harmonic structure, while AI-generated excerpts would display more consistent tempo and broader spectral energy distributions.
 
-This current project aims to contribute to the current research by focusing on the differences in acoustic features between AI-generated and human-composed 30-second solo piano pieces, and to create a classification model that is able to reliably predict whether or not a 30-second solo piano piece is AI-generated or composed by a human. We hypothesized that human performances would exhibit greater variability in timing and harmonic structure, while AI-generated excerpts would display more consistent tempo and broader spectral energy distributions.
+
 
 # Data and Methodology
 
@@ -97,28 +92,80 @@ The point-biserial correlation, shown in **Figure @fig-pb**, quantified the stre
 
 ![Figure 2: Point-biserial correlations between each selected acoustic feature and the binary class label.](Visualizations/pointbiserial.png){#fig-pb width=600}
 
-Next, we compared feature rankings from three complementary methods, as shown in **Figure @fig-featimp**.
+Next, we compared feature rankings from three complementary methods, as shown in **Figure @fig-featimp**. On the left, Cohen’s d quantifies each feature’s standardized effect size between human and AI clips, providing a model-agnostic measure of group differences. In the center, the absolute coefficients from an L1-penalized logistic regression pick out features with the strongest linear contributions to classification, enforcing sparsity to highlight only the most robust predictors. On the right, Random Forest Gini importance captures non-linear effects and interactions by measuring how much each feature reduces impurity across the ensemble’s decision trees. Including Cohen’s d alongside these model-based scores ensures we retain features that exhibit large, consistent differences in the raw data, even before any model fitting.
+Features were prioritized based on how consistently they ranked in the top 10 across multiple methods. However, it was important to keep in mind feature redundancy which we discuss in the next section.
+
 
 ![Figure 3: Top ten acoustic descriptors selected from the full set of 58 features, ranked by three complementary methods.](Visualizations/featureimportance.png){#fig-featimp width=600}
 
-Three variables emerged as especially influential in distinguishing AI-generated from human performances:  
-- **Spectral bandwidth** …  
-- **Tempo variability** …  
-- **Chroma balance** …  
+Three variables emerged as especially influential in distinguishing AI-generated from human performances. Spectral bandwidth, which reflects the range of frequencies present, tended to be narrower in human recordings, with a richer midrange produced by natural pedaling and touch. In contrast, AI clips often showed unnaturally extended highs and lows resulting from synthesis. Tempo variability captured natural fluctuations in timing, human performers frequently speed up or slow down for expressive effect, whereas AI outputs were more metronomic. Chroma balance, a measure of the evenness of pitch-class use, also differed between the two groups: human players often favored certain tonal centers or voicings, while AI tended toward a more uniform distribution across keys and harmonies.
 
-A Chi-square test found no significant association between feature distribution and generation platform (*p* > 0.05), suggesting that differences are not platform-specific.
+A Chi-square test found no significant association between feature distribution and generation platform (p > 0.05), suggesting that differences are not platform-specific.
+
+## Assumption Checks: Normality, Variance Homogeneity, and Multicollinearity
+
+Before running parametric statistical tests such as Welch’s *t*-tests and ANOVA, we checked whether each feature met the assumptions of normality and equal variances between AI and human groups. Shapiro–Wilk tests indicated that all features deviated from normality in at least one group (*p* < 0.05), so we did not assume normally distributed data. We also ran Levene’s tests for homogeneity of variances, which showed that several key features — such as `spectral_bandwidth_mean`, `tempo_std`, and `mfcc_3_mean` — had significantly different variances between classes. These results reinforced our choice of Welch’s *t*-test, which is robust to both non-normality and unequal variances, for all hypothesis testing.
+
+For the logistic regression model, we examined variance inflation factors (VIF) to assess multicollinearity among the ten final features. All VIF values were below the commonly used threshold of 5, indicating no problematic collinearity. This confirmed that each feature contributed unique information to the model and that coefficient estimates would remain stable and interpretable.
+
+## Feature Redundancy Check and Final Selection Criteria
+
+To reduce multicollinearity and improve interpretability, we computed pairwise Pearson correlations (Figure @fig-corr) among all top-ranked features and enforced a threshold of |r| < 0.7, meaning no two selected features could be too closely correlated. The only exception was `spectral_bandwidth_mean` and `spectral_centroid_mean`, which were moderately correlated (*r* ≈ 0.73) but retained due to their distinct acoustic interpretations: bandwidth reflects spread of energy across frequencies, while centroid captures perceived brightness.
+
+![Figure 4: Pairwise Pearson correlation heatmap for the ten final acoustic features.](Visualizations/pearsonheatmap.png){#fig-corr width=600}
+
+*Note.* Shows all off-diagonal correlations below 0.7 (except the one justified exception), confirming non-redundancy of the selected feature set.
+
+This filtering step ensured that our final subset of ten acoustic features was both non-redundant and consistently predictive. 
+
+## Variance Inflation Factor (VIF) Analysis
+
+To further confirm that our selected features were not excessively collinear, we calculated Variance Inflation Factors (VIF) for each feature in the final set. VIF measures how much the variance of a regression coefficient is inflated due to multicollinearity with other predictors. A VIF of 1 indicates no correlation with other variables, while values above 5–10 are generally considered problematic.
+
+As shown in **Table 2**, all features had VIF values well below the threshold of 5, with most under 2, indicating minimal multicollinearity. This result supports our earlier Pearson correlation check (Figure @fig-corr) and provides additional assurance that each feature contributes unique information to the model without introducing instability into the coefficient estimates.
+
+**Table 2. Variance Inflation Factors for Final Features**
+
+| Feature | VIF |
+| --- | ---: |
+| spectral_bandwidth_mean | 3.682 |
+| spectral_centroid_mean | 3.118 |
+| mfcc_3_mean | 1.525 |
+| tempo_std | 1.291 |
+| onset_rate | 1.261 |
+| chroma_stft_mean | 1.237 |
+| mfcc_5_mean | 1.128 |
+| tonnetz_3_mean | 1.088 |
+| tonnetz_6_mean | 1.081 |
+| mfcc_delta2_13_mean | 1.020 |
+
+## Exploratory Visualization with Selected Features
+
+To gain intuition about the separability of human-performed versus AI-generated piano excerpts in our selected feature space, we projected the ten features into two dimensions using t-distributed Stochastic Neighbor Embedding (t-SNE). As shown in Figure @fig-tsne, each point represents a 30-second clip, colored yellow for humans and purple for AI.
+
+![Figure 5: Two-dimensional t-SNE embedding of the ten selected acoustic features.](Visualizations/tsne.png){#fig-tsne width=600}
+
+*Note.* Human-performed excerpts are shown as yellow circles and AI-generated excerpts as purple circles. Pockets of yellow and purple illustrate regions where the acoustic signatures of human timing and timbre versus AI steadiness and spectral breadth tend to cluster.
+
+While the two classes are not perfectly separated, reflecting overlap in certain acoustic traits, there are clear regions where human excerpts cluster, often marked by more expressive timing variations and narrower spectral spreads. AI-generated clips, in contrast, frequently group together in areas characterized by steadier tempi and broader spectral energy. Notably, outlier analysis revealed that most extreme cases in the AI class came from the Suno platform, which tended to produce pieces with unusually high spectral bandwidth and onset rates. These characteristics explain much of the tight clustering for Suno-generated excerpts, while other AI platforms showed more dispersion. Occasional overlaps between classes appear to stem from individual pieces whose acoustic profiles happen to align, rather than random noise, reinforcing the need for a supervised model to capture subtle but consistent distinctions across platforms.
+
+
+# Results
 
 # Results
 
 ## Dataset Summary
-The final dataset contained 722 thirty-second solo piano excerpts, evenly split between human-composed (n = 361) and AI-generated (n = 361) excerpts. Human recordings were drawn from public-domain libraries (FMA and Musopen) spanning classical, jazz, and contemporary styles. AI-generated examples came from four systems (AIVA, Udio, and two emergent models) to capture a range of algorithmic approaches. All source tracks exceeded 30 seconds, and metadata (platform, license, creator or generator name) was recorded for traceability.
+
+The final dataset contained 722 thirty-second solo piano excerpts, evenly split between human-composed (*n* = 361) and AI-generated (*n* = 361) excerpts. Human recordings were drawn from public-domain libraries (FMA and Musopen) spanning classical, jazz, and contemporary styles. AI-generated examples came from four systems (AIVA, Udio, and two emergent models) to capture a range of algorithmic approaches. All source tracks exceeded 30 seconds, and metadata (platform, license, creator or generator name) was recorded for traceability.
 
 ## Model Choice and Pipeline
-Initial experiments with individual classifiers (logistic regression, random forest, gradient boosting) revealed trade-offs between interpretability and performance. We ultimately settled on a stacking model combining calibrated logistic regression, random forest (100 trees, max_depth = 5), gradient boosting, and naïve Bayes base learners. Pairwise interaction terms were added via second-degree polynomial features, and a logistic regression meta-learner was used to integrate their outputs. Stratified five-fold cross-validation guided hyperparameter selection and helped limit overfitting, while a final hold-out evaluation provided an unbiased assessment.
+
+Initial experiments with individual classifiers (logistic regression, random forest, gradient boosting) revealed trade-offs between interpretability and performance. We ultimately settled on a stacking model combining calibrated logistic regression, random forest (100 trees, `max_depth` = 5), gradient boosting, and naïve Bayes base learners. Pairwise interaction terms were added via second-degree polynomial features, and a logistic regression meta-learner was used to integrate their outputs. Stratified five-fold cross-validation guided hyperparameter selection and helped limit overfitting, while a final hold-out evaluation provided an unbiased assessment.
 
 ## Model Evaluation
 
-### Table 3. Hold-Out Test Results
+**Table 3. Hold-Out Test Results**
+
 | Metric     | Value |
 |------------|-------|
 | Accuracy   | 0.821 |
@@ -127,31 +174,175 @@ Initial experiments with individual classifiers (logistic regression, random for
 | F1 Score   | 0.824 |
 | ROC-AUC    | 0.924 |
 
-**Confusion matrix** is shown in **Figure @fig-confmat**.
+![Figure 6: Confusion matrix for the stacking classifier on the 20% hold-out test set.](Visualizations/confusionmatrix.png){#fig-confmat width=400}
 
-![Figure 6: Confusion matrix showing counts of true human and AI excerpts versus the model’s human/AI predictions.](Visualizations/confusionmatrix.png){#fig-confmat width=400}
+*Note.* The top-left and bottom-right cells indicate correctly classified samples, while the off-diagonals show misclassifications.
 
-**ROC curve** is shown in **Figure @fig-roc**.
+## Model Performance and Generalization
 
-![Figure 7: ROC curve (AUC = 0.924) plotting True Positive Rate vs. False Positive Rate; dashed line = random classifier.](Visualizations/ROCcurve.png){#fig-roc width=600}
+On the training set, the logistic regression model achieved near-perfect performance (Accuracy = 0.995, Precision = 0.990, Recall = 1.000, F1 = 0.995, ROC–AUC = 1.000). Such high scores on the training data indicate that the model fits the training examples extremely well. However, the drop in performance on the held-out test set (Accuracy = 0.821, Precision = 0.803, Recall = 0.847, F1 = 0.824, ROC–AUC = 0.924) suggests some overfitting. The model memorizes patterns in the training data that do not perfectly transfer to unseen examples.
 
-### Training vs. Test Performance
-On the training set, the logistic regression model achieved near-perfect performance … (table omitted here for brevity — paste your existing section if desired)
+| Metric   | Training | Test   |
+|----------|----------|--------|
+| Accuracy | 0.995    | 0.821  |
+| Precision| 0.990    | 0.803  |
+| Recall   | 1.000    | 0.847  |
+| F1 Score | 0.995    | 0.824  |
+| ROC-AUC  | 1.000    | 0.924  |
+
+Even so, test-set results remain strong, particularly the ROC–AUC of 0.924, which reflects the model’s ability to discriminate between AI and human excerpts across all classification thresholds. The balance between precision and recall also indicates that the model performs well in both identifying AI-generated music and avoiding false positives.
+
+The final stacking ensemble achieved 82.1% accuracy on the held-out test set, indicating that over four out of five excerpts were correctly classified as human or AI-generated. Precision was 0.803, meaning that when the model predicted an excerpt was AI-generated, it was correct about 80% of the time. Recall reached 0.847, showing that the model successfully identified roughly 85% of all AI-generated excerpts. The F1 score of 0.824 balances these precision and recall values, reflecting strong overall classification performance. The ROC-AUC of 0.924 indicates that, across all possible decision thresholds, the model ranks a randomly chosen AI excerpt higher than a randomly chosen human excerpt about 92.4% of the time, demonstrating excellent separability between the two classes.
+
+![Figure 7: ROC curve for the final stacking classifier on the 20% hold-out test set.](Visualizations/ROCcurve.png){#fig-roc width=600}
+
+*Note.* The dotted diagonal line represents random guessing, and the model’s AUC = 0.924 indicates strong discrimination between human and AI excerpts.
+
+Both classes had the same F1 score (0.82), and ROC-AUC was particularly informative as it evaluates ranking performance independently of any threshold.
 
 ## Error Analysis
 
-![Figure 8: Error analysis highlighting types of misclassifications.](Visualizations/erroranalysis.png){#fig-error width=600}
+To explore where the model was less certain, we reviewed the five most extreme misclassifications in each category. Figure @fig-tsne_errors shows the instances where the classification resulted in an AI-generated excerpt being incorrectly labeled as a human-composed excerpt (false positive) and where a human-composed excerpt was incorrectly labeled as AI-generated (false negative). 
 
-(Your narrative text here — same as before.)
+![Figure 8: t-SNE projection of test excerpts highlighting misclassified samples.](Visualizations/tsne_misclassifications.png){#fig-tsne_errors width=600}
 
-# Discussion
+*Note.* Red crosses indicate false positives (human excerpts predicted as AI), blue crosses indicate false negatives (AI excerpts predicted as human), and faint gray points show correctly classified samples.
 
-(Your Discussion section as before.)
+Some AI excerpts had a bright, wide sound but fewer timing changes, suggesting the model sometimes relied more on rhythm than tone. A few human excerpts kept an unusually steady tempo or had a balanced mix of notes, making them sound more like AI pieces. Overall, the stacking model was good at telling human and AI piano apart, but certain playing styles made the line between them less clear.
 
-# Appendix
+**Platform effects.** A chi-square test found no significant association between platform and label prevalence (*p* > 0.05), but Suno clips showed visually tight clusters and contributed many extremes in spectral bandwidth and onset rate in the outlier screen. This suggests stylistic/production tendencies can influence where clips appear in feature space even when label balance across platforms is not biased.
 
-(Your Appendix tables as before.)
 
-# References
+## Discussion
+In this work, we developed a transparent, feature-based pipeline to distinguish 30-second solo piano excerpts as human-composed or AI-generated. By starting with a balanced dataset of 722 excerpts and extracting 55 acoustic descriptors, we used statistical tests and model-based rankings to hone in on a non-redundant set of ten features. Our enhanced stacking ensemble, combining calibrated logistic regression, random forest, gradient boosting, and naïve Bayes with interaction terms, achieved 82.1 % accuracy (0.924 ROC-AUC) on held-out data. While these results are encouraging, our primary goal is to illuminate which acoustic cues reliably signal “humanness” in piano performance.
 
-(Your References list as before — exactly as you pasted earlier.)
+### Acoustic Cues of “Humanness”
+Three main features stood out as the most useful for telling human and AI piano apart. Spectral bandwidth measures how sound energy is spread across low and high pitches. Human pianists often create a balance between brightness and warmth, while AI pieces sometimes sound either too bright or too flat. Tempo variability tracks how much the speed changes during a performance. Human players naturally slow down or speed up slightly for expression, while AI pieces tend to keep a steady beat. Chroma balance looks at how evenly different notes and chords are used. Humans often vary chord shapes and emphasize certain tones in a way that feels more natural and emotional, while AI outputs can sound more uniform. Together, these features capture differences in tone, rhythm, and harmony that often make human performances feel more expressive.
+
+### Error Modes and Model Boundaries
+We found two main ways the model made mistakes. Some AI pieces, even though they were computer-generated, had a loose, human-like timing pattern (similar to rubato) but also very bright, wide-ranging tones. These fooled the model into thinking they were human, which suggests the model sometimes focuses more on timing than tone. On the other hand, some human performances were so steady in tempo and so average in harmonic balance that they came across as mechanical, leading the model to label them as AI. In short, very “human-like” AI playing and very “machine-like” human playing were the trouble spots. These cases suggest the model might do better if it could also pick up on other cues, like how the sustain pedal is used or finer details of timing changes.
+
+### Data Ethics
+This project has several limitations and ethical considerations that should be acknowledged. Our human recordings were drawn from public-domain sources (FMA, Musopen) under clear licensing terms, but these archives do not fully capture the range of piano styles, traditions, or performer backgrounds. As a result, the model may reflect biases if applied to music outside this narrow scope.
+
+There is also a risk of misclassification. Incorrectly labeling a human performance as AI-generated could unfairly affect an artist’s reputation, while missing AI-generated content could allow for misuse or misattribution. For this reason, any automated predictions should be treated as preliminary, ideally accompanied by confidence scores and, when possible, reviewed by human listeners.
+
+Publishing the specific acoustic patterns that distinguish our dataset’s human and AI recordings could enable future AI systems to imitate these patterns more effectively, reducing the effectiveness of static detectors. Detection tools will likely need ongoing updates, external review, and collaborative oversight to remain reliable.
+
+Finally, some commercial AI music platforms, including Suno and AIVA, have been criticized for producing works that closely resemble human artists’ styles. If these systems are trained on copyrighted material, their outputs could raise questions around intellectual property and fair use.
+
+### Directions for Future Work
+To broaden applicability, future studies should incorporate MIDI/symbolic data for note-level analysis (voice-leading, chord progressions) alongside audio features. Enhancing temporal modeling with metrics like onset-interval autocorrelation or beat-synchronous energy flows could improve sensitivity to expressive phrasing. Hybrid approaches that integrate interpretable features with lightweight neural embeddings (e.g., timbral autoencoders) may capture subtler spectral artifacts. Finally, evaluating the pipeline on unseen AI systems and “in-the-wild” streaming data, using nested cross-validation to guard against overfitting, will be critical for real-world deployment.
+
+By clearly identifying which acoustic characteristics drive classification and acknowledging both technical and ethical challenges, we offer a replicable foundation for ongoing work in automated AI-music detection, helping to support listener trust and fair recognition of human artistry.
+
+---
+
+## Appendix: 
+
+**Table A1.** Detailed feature values for the top five false positives (human excerpts mislabeled as AI) in the hold-out test set. Each row lists the excerpt index, key acoustic feature measurements, and the true versus predicted labels.
+
+| Index | spectral_bandwidth_mean | tempo_std | chroma_stft_mean | onset_rate | True Label | Pred Label |
+|-------|-------------------------|-----------|------------------|------------|------------|------------|
+| 0     | 924.23                  | 50.03     | 0.282            | 3.47       | Human      | AI         |
+| 8     | 648.68                  | 240.22    | 0.272            | 3.40       | Human      | AI         |
+| 12    | 616.12                  | 249.10    | 0.281            | 3.67       | Human      | AI         |
+| 35    | 808.12                  | 174.78    | 0.319            | 7.80       | Human      | AI         |
+| 48    | 739.49                  | 271.98    | 0.240            | 2.57       | Human      | AI         |
+
+**Table A2.** Detailed feature values for the top five false negatives (AI excerpts mislabeled as human) in the hold-out test set. Each row lists the excerpt index, key acoustic feature measurements, and the true versus predicted labels.
+
+| Index | spectral_bandwidth_mean | tempo_std | chroma_stft_mean | onset_rate | True Label | Pred Label |
+|-------|-------------------------|-----------|------------------|------------|------------|------------|
+| 1     | 749.85                  | 209.21    | 0.269            | 6.43       | AI         | Human      |
+| 37    | 1330.79                 | 254.11    | 0.248            | 1.87       | AI         | Human      |
+| 67    | 2676.89                 | 277.61    | 0.218            | 1.77       | AI         | Human      |
+| 68    | 549.07                  | 67.58     | 0.277            | 1.77       | AI         | Human      |
+| 79    | 737.93                  | 229.27    | 0.225            | 2.53       | AI         | Human      |
+
+**Table A3.** Summary of univariate hypothesis tests for the top ten features. Columns include Welch’s t-statistic and p-value (unequal variances), absolute point-biserial correlation (|r_pb|), one-way ANOVA F-statistic and p-value, Tukey HSD 95% confidence intervals for group mean differences, and Cohen’s d effect sizes.
+
+| Feature                    | t-stat | p-value (Welch) | \|r_pb\| | F-stat  | p-value (ANOVA) | Tukey CI lower | Tukey CI upper | Cohen’s d |
+|----------------------------|--------|-----------------|----------|--------|-----------------|----------------|----------------|-----------|
+| spectral_bandwidth_mean    | 9.032  | < 0.0001        | 0.319    | 81.574 | < 0.0001        | –424.63        | –272.99        | 0.672     |
+| tempo_std                   | 7.521  | < 0.0001        | 0.270    | 56.563 | < 0.0001        | –69.29         | –40.61         | 0.560     |
+| chroma_stft_mean            | 7.165  | < 0.0001        | 0.258    | 51.343 | < 0.0001        | –0.03          | –0.02          | 0.533     |
+| onset_rate                  | –6.280 | < 0.0001        | 0.228    | 39.442 | < 0.0001        | 0.47           | 0.89           | 0.467     |
+| mfcc_3_mean                 | 4.925  | < 0.0001        | 0.181    | 24.255 | < 0.0001        | –9.32          | –4.01          | 0.367     |
+| spectral_centroid_mean      | 4.721  | < 0.0001        | 0.173    | 22.285 | < 0.0001        | –144.58        | –59.65         | 0.351     |
+| mfcc_5_mean                 | –3.664 | 0.0003          | 0.273    | 13.427 | 0.0003          | 0.87           | 2.87           | 0.273     |
+| tonnetz_3_mean              | –3.629 | 0.0003          | 0.270    | 13.169 | 0.0003          | 0.02           | 0.06           | 0.270     |
+| tonnetz_6_mean              | 3.454  | 0.0006          | 0.128    | 11.932 | 0.0006          | –0.02          | –0.00          | 0.257     |
+| mfcc_delta2_13_mean         | –3.173 | 0.0016          | 0.117    | 10.067 | 0.0016          | 0.00           | 0.00           | 0.236     |
+
+
+
+## References
+
+Afchar, D., Issam, W., & Prévost, C. (2025). Detecting generative AI in music: First public AI-music detector and its challenges. arXiv. https://arxiv.org/html/2501.10111v1
+
+
+
+
+Barlow, G. (2025, July 3). Apple and Spotify are sleepwalking into an AI music crisis – and The Velvet Sundown mess shows they need to act fast. TechRadar. https://www.techradar.com/computing/artificial-intelligence/apple-and-spotify-are-sleepwalking-into-an-ai-music-crisis-and-the-velvet-sundown-mess-shows-they-need-to-act-fast?utm_source=chatgpt.com
+
+
+
+
+Beck, E. (2025, July 8). A ’60s-flavored band blew up on Spotify. They’re AI. The Washington Post. https://www.washingtonpost.com/entertainment/music/2025/07/08/velvet-sundown-artificial-intelligence-spotify/
+
+
+
+
+Dervakos, E., Filandrianos, G., & Stamou, G. (2021). Heuristics for evaluation of AI-generated music [Poster]. ICPR 2021. https://ailb-web.ing.unimore.it/icpr/media/posters/11986.pdf
+
+
+
+
+Flexer, A., Schnitzer, D., & Widmer, G. (2006). Combination of spectral and rhythmic similarity feature spaces for music classification (OeFAI TR-2006-09). Austrian Research Institute for Artificial Intelligence. https://ofai.at/papers/oefai-tr-2006-09.pdf
+
+
+
+
+Misra, S. (2022). An AI model to differentiate AI-generated music from human-composed music [Independent Project Mentorship]. https://independent-project-mentorship.netlify.app/assets/pdfs/2ededfe6e527c0b86f86b57d56647c1400ba9a27.pdf
+
+
+
+
+MusicAlly. (2025, July 8). Key quotes from Michael Nash’s keynote at the AI for Good Global Summit. https://musically.com/2025/07/08/umgs-michael-nash-ai-can-be-fundamental-to-the-future-of-music/
+
+
+
+
+Noh, M., & Kim, C. (2025). Harmony and personality: Analyzing connections between AI-generated music preference and personal traits. Nursing and Healthcare Science Journal. https://nhsjs.com/2025/harmony-and-personality-analyzing-connections-between-ai-generated-music-preference-and-personal-traits/
+
+
+
+
+Press-Reynolds, E. (2025, July 2). How AI wreaked havoc on the lo-fi beat scene. Pitchfork. https://pitchfork.com/thepitch/how-ai-wreaked-havoc-on-the-lo-fi-beat-scene/?utm_source=chatgpt.com
+
+
+
+
+Reuters. (2025, July 8). Resurgence of music securitization attracts investors, but emerging risks like AI remain considerations. Reuters. https://www.reuters.com/legal/legalindustry/resurgence-music-securitization-issuer-investor-appeal-data-driven-era-2025-07-08/
+
+
+
+
+Sarmento, P., Loth, J., & Barthet, M. (2024). Between the AI and Me: Analysing listeners’ perspectives on AI- and human-composed progressive metal music. arXiv. https://arxiv.org/abs/2407.21615
+
+
+
+
+Schneider, L. (2025, May 19). AI music is more common – and harder to catch – than ever. Scienceline. https://scienceline.org/2025/05/ai-music-is-more-common-and-harder-to-catch-than-ever/
+
+
+
+
+University of York. (2023). AI-generated music inferior to human-composed music. University of York. https://www.york.ac.uk/news-and-events/news/2023/research/ai-generated-music-inferior-to-human-composed/
+
+
+
+
+Wikipedia contributors. (n.d.). Music and artificial intelligence. In Wikipedia, The Free Encyclopedia. Retrieved July 28, 2025, from https://en.wikipedia.org/wiki/Music_and_artificial_intelligence
+
