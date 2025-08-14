@@ -1,6 +1,5 @@
 ---
-title: "Capstone Project"
-subtitle: Subtitle
+title: "Using Machine Learning to Classify AI‑ and Human‑Composed Solo Piano Pieces"
 authors:
   - Sam Beilenson
   - Sam Twenhafel
@@ -11,8 +10,11 @@ format:
   html:
     toc: true
     number-sections: true
-    theme: cosmo
+    theme:
+      light: flatly
+      dark: darkly
 ---
+
 
 # Introduction
 
@@ -80,7 +82,7 @@ Used in the final models was a group of ten features. Table 1 provides an overvi
 | tonnetz_6_mean               | Also captures harmonic relationships, different from tonnetz_3 but similarly focused on musical structure. |
 | mfcc_delta2_13_mean          | Tracks how the tonal texture changes over time; helps identify expressive or mechanical playing shifts. |
 
-To identify a concise and informative subset of acoustic features, we employed a approach that combined statistical hypothesis testing and model-based importance rankings.
+To identify a concise and informative subset of acoustic features, we employed an approach that combined statistical hypothesis testing and model-based importance rankings.
 
 First, we used several univariate statistical tests — Welch’s *t*-tests, point-biserial correlations, and one-way ANOVA with post-hoc Tukey HSD — to measure the strength and consistency of differences between human-composed and AI-generated piano excerpts. Welch’s *t*-test was chosen because it robustly handles unequal variances and unequal sample sizes between groups.  
 
@@ -88,7 +90,7 @@ While some features deviated from normality under Shapiro–Wilk tests, Welch’
 
 The point-biserial correlation, shown in **Figure @fig-pb**, quantified the strength of the linear relationship between each feature and the binary outcome (human or AI). The ANOVA (with Tukey post-hoc tests) confirmed statistically significant differences between group means while adjusting for multiple comparisons. **Figure @fig-meandiff** displays the standardized mean differences of the final features that were selected, and whether or not the means are higher in the AI or human-composed classes.
 
-![Figure 1: Standardized mean differences (z-score) between human and AI excerpts for the ten selected features.](Visualizations/meandifbyfeature.png){#fig-meandiff width=600}
+![Figure 1. Standardized mean differences (z-scores) between human and AI excerpts for the ten selected features, with bar colors indicating which class had the higher mean.](Visualizations/meandifbyfeature.png){#fig-meandiff width=600}
 
 ![Figure 2: Point-biserial correlations between each selected acoustic feature and the binary class label.](Visualizations/pointbiserial.png){#fig-pb width=600}
 
@@ -96,7 +98,7 @@ Next, we compared feature rankings from three complementary methods, as shown in
 Features were prioritized based on how consistently they ranked in the top 10 across multiple methods. However, it was important to keep in mind feature redundancy which we discuss in the next section.
 
 
-![Figure 3: Top ten acoustic descriptors selected from the full set of 58 features, ranked by three complementary methods.](Visualizations/featureimportance.png){#fig-featimp width=600}
+![Figure 3. Top ten acoustic descriptors selected from the full set of 58 features, ranked by Cohen’s d, logistic regression coefficients, and Random Forest Gini importance.](Visualizations/featureimportance.png){#fig-featimp width=600}
 
 Three variables emerged as especially influential in distinguishing AI-generated from human performances. Spectral bandwidth, which reflects the range of frequencies present, tended to be narrower in human recordings, with a richer midrange produced by natural pedaling and touch. In contrast, AI clips often showed unnaturally extended highs and lows resulting from synthesis. Tempo variability captured natural fluctuations in timing, human performers frequently speed up or slow down for expressive effect, whereas AI outputs were more metronomic. Chroma balance, a measure of the evenness of pitch-class use, also differed between the two groups: human players often favored certain tonal centers or voicings, while AI tended toward a more uniform distribution across keys and harmonies.
 
@@ -112,7 +114,7 @@ For the logistic regression model, we examined variance inflation factors (VIF) 
 
 To reduce multicollinearity and improve interpretability, we computed pairwise Pearson correlations (Figure @fig-corr) among all top-ranked features and enforced a threshold of |r| < 0.7, meaning no two selected features could be too closely correlated. The only exception was `spectral_bandwidth_mean` and `spectral_centroid_mean`, which were moderately correlated (*r* ≈ 0.73) but retained due to their distinct acoustic interpretations: bandwidth reflects spread of energy across frequencies, while centroid captures perceived brightness.
 
-![Figure 4: Pairwise Pearson correlation heatmap for the ten final acoustic features.](Visualizations/pearsonheatmap.png){#fig-corr width=600}
+![Figure 4: Pairwise Pearson correlation heatmap for the ten final acoustic features.](Visualizations/corrheatmap.png){#fig-corr width=600}
 
 *Note.* Shows all off-diagonal correlations below 0.7 (except the one justified exception), confirming non-redundancy of the selected feature set.
 
@@ -143,7 +145,7 @@ As shown in **Table 2**, all features had VIF values well below the threshold of
 
 To gain intuition about the separability of human-performed versus AI-generated piano excerpts in our selected feature space, we projected the ten features into two dimensions using t-distributed Stochastic Neighbor Embedding (t-SNE). As shown in Figure @fig-tsne, each point represents a 30-second clip, colored yellow for humans and purple for AI.
 
-![Figure 5: Two-dimensional t-SNE embedding of the ten selected acoustic features.](Visualizations/tsne.png){#fig-tsne width=600}
+![Figure 5: Two-dimensional t-SNE embedding of the ten selected acoustic features, with human-performed excerpts shown in yellow and AI-generated excerpts shown in purple.](Visualizations/t-sne.png){#fig-tsne width=600}
 
 *Note.* Human-performed excerpts are shown as yellow circles and AI-generated excerpts as purple circles. Pockets of yellow and purple illustrate regions where the acoustic signatures of human timing and timbre versus AI steadiness and spectral breadth tend to cluster.
 
@@ -152,7 +154,6 @@ While the two classes are not perfectly separated, reflecting overlap in certain
 
 # Results
 
-# Results
 
 ## Dataset Summary
 
@@ -194,7 +195,7 @@ Even so, test-set results remain strong, particularly the ROC–AUC of 0.924, wh
 
 The final stacking ensemble achieved 82.1% accuracy on the held-out test set, indicating that over four out of five excerpts were correctly classified as human or AI-generated. Precision was 0.803, meaning that when the model predicted an excerpt was AI-generated, it was correct about 80% of the time. Recall reached 0.847, showing that the model successfully identified roughly 85% of all AI-generated excerpts. The F1 score of 0.824 balances these precision and recall values, reflecting strong overall classification performance. The ROC-AUC of 0.924 indicates that, across all possible decision thresholds, the model ranks a randomly chosen AI excerpt higher than a randomly chosen human excerpt about 92.4% of the time, demonstrating excellent separability between the two classes.
 
-![Figure 7: ROC curve for the final stacking classifier on the 20% hold-out test set.](Visualizations/ROCcurve.png){#fig-roc width=600}
+![Figure 7: Receiver operating characteristic (ROC) curve for the final stacking classifier, with AUC = 0.924 indicating strong discrimination between classes.](Visualizations/ROCcurve.png){#fig-roc width=600}
 
 *Note.* The dotted diagonal line represents random guessing, and the model’s AUC = 0.924 indicates strong discrimination between human and AI excerpts.
 
@@ -204,7 +205,7 @@ Both classes had the same F1 score (0.82), and ROC-AUC was particularly informat
 
 To explore where the model was less certain, we reviewed the five most extreme misclassifications in each category. Figure @fig-tsne_errors shows the instances where the classification resulted in an AI-generated excerpt being incorrectly labeled as a human-composed excerpt (false positive) and where a human-composed excerpt was incorrectly labeled as AI-generated (false negative). 
 
-![Figure 8: t-SNE projection of test excerpts highlighting misclassified samples.](Visualizations/tsne_misclassifications.png){#fig-tsne_errors width=600}
+![Figure 8: t-SNE projection of test excerpts highlighting misclassified samples: red crosses are false positives, blue crosses are false negatives, and faint gray points are correctly classified samples.](Visualizations/erroranalysis.png){#fig-tsne_errors width=600}
 
 *Note.* Red crosses indicate false positives (human excerpts predicted as AI), blue crosses indicate false negatives (AI excerpts predicted as human), and faint gray points show correctly classified samples.
 
@@ -345,4 +346,5 @@ University of York. (2023). AI-generated music inferior to human-composed music.
 
 
 Wikipedia contributors. (n.d.). Music and artificial intelligence. In Wikipedia, The Free Encyclopedia. Retrieved July 28, 2025, from https://en.wikipedia.org/wiki/Music_and_artificial_intelligence
+
 
