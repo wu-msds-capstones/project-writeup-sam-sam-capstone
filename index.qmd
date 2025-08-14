@@ -40,10 +40,12 @@ Data for this project was gathered from multiple sources. The human-composed sol
 To ensure replicability, AI clips were generated using minimal, piano-only prompts such as "solo piano, only piano" and slight variations (e.g., "solo piano performance", "classical solo piano"). These were chosen after pilot testing showed they produced the highest proportion of pure piano output without extra instrumentation.
 
 Pieces were included only if they met quality standards:
-- **Instrument purity** — no audible non-piano sounds.
-- **Clarity** — no distortion, clipping, or excessive background noise.
-- **Adequate dynamic range** — clear differences between soft and loud passages.
-- **Sufficient volume** — must normalize without introducing artifacts.
+
+* **Instrument purity** — no audible non-piano sounds.  
+* **Clarity** — no distortion, clipping, or excessive background noise.  
+* **Adequate dynamic range** — clear differences between soft and loud passages.  
+* **Sufficient volume** — must normalize without introducing artifacts.  
+
 
 This was important because spectral and harmonic features can be influenced by recording quality; setting strict criteria reduced the likelihood that observed differences were due to microphone, mixing, or mastering factors rather than performance or composition.
 
@@ -51,24 +53,30 @@ This was important because spectral and harmonic features can be influenced by r
 After downloading human and AI-generated solo piano pieces from their respective sources, several preprocessing steps were taken to prepare a consistent and balanced dataset. A Python script was utilized to standardize each audio file to mono 16-bit WAV format at 44.1 kHz sampling rate and normalized loudness to -23 LUFS, eliminating differences related to audio quality and loudness. To ensure sufficient sample size and balanced representation, especially since AI-generated pieces tended to be shorter, we randomly extracted up to four 30-second excerpts from each AI-generated track, and up to two excerpts from each human-performed track. These excerpts were selected by dividing each piece into non-overlapping excerpts and randomly sampling among them.
 
 From each excerpt, we extracted a variety of acoustic features covering four broad categories:
-- **Spectral features** capture the overall sound color or timbre of the piano, reflecting characteristics such as brightness and tonal complexity.  
-- **Temporal features** describe rhythmic and timing aspects, such as how consistently or expressively the performer maintains tempo.  
-- **Harmonic features** quantify the musical relationships between notes and chords, providing insights into the structural and tonal qualities of the music.  
-- **Cepstral features** represent subtle variations in sound texture, helping to distinguish nuanced differences in tone and articulation between human and AI performances.  
+
+* **Spectral features** capture the overall sound color or timbre of the piano, reflecting characteristics such as brightness and tonal complexity.  
+* **Temporal features** describe rhythmic and timing aspects, such as how consistently or expressively the performer maintains tempo.  
+* **Harmonic features** quantify the musical relationships between notes and chords, providing insights into the structural and tonal qualities of the music.  
+* **Cepstral features** represent subtle variations in sound texture, helping to distinguish nuanced differences in tone and articulation between human and AI performances.  
+
 
 Collectively, these acoustic features allowed us to systematically characterize the musical differences between human-performed and AI-generated piano excerpts. The resulting data set includes 58 acoustic features from a balanced number of 722 30-second excerpts, 361 of which were AI-generated excerpts and 361 of which were human-composed excerpts.
 
 ## Data Engineering
+
 We organized our dataset into three clearly defined tables, each stored separately to facilitate straightforward analysis without unnecessary merging.
 
-- A **metadata table** was created to ensure traceability and reproducibility. Every audio excerpt was assigned a unique identifier, linking it consistently across tables and enabling accurate referencing of the original sources and associated features.
-- The **full dataset** was generated directly by a Python script that extracted 58 acoustic features from each audio clip. This dataset preserved all raw features without alteration, providing a comprehensive view of each excerpt’s acoustic profile.
-- Lastly, a **streamlined final feature dataset** was created, containing only the ten features identified as most predictive during feature selection. This reduced dataset served as the primary input for modeling, ensuring clarity, interpretability, and computational efficiency.
+A metadata table was created to ensure traceability and reproducibility. Every audio excerpt was assigned a unique identifier, linking it consistently across tables and enabling accurate referencing of the original sources and associated features.
+
+The full dataset was generated directly by a Python script that extracted 58 acoustic features from each audio clip. This dataset preserved all raw features without alteration, providing a comprehensive view of each excerpt’s acoustic profile.
+
+Lastly, a streamlined final feature dataset was created, containing only the ten features identified as most predictive during feature selection. This reduced dataset served as the primary input for modeling, ensuring clarity, interpretability, and computational efficiency.
+
 
 ## Feature Selection & Statistical Analysis
 Used in the final models was a group of ten features. Table 1 provides an overview of these features and their definitions.
 
-### Table 1. Features used in the final model and their definitions
+Table 1. Features used in the final model and their definitions
 | Feature Name                | Definition |
 |-----------------------------|------------|
 | spectral_bandwidth_mean     | How wide the sound is, from low to high; higher values often mean a brighter, more complex tone. |
@@ -84,21 +92,21 @@ Used in the final models was a group of ten features. Table 1 provides an overvi
 
 To identify a concise and informative subset of acoustic features, we employed an approach that combined statistical hypothesis testing and model-based importance rankings.
 
-First, we used several univariate statistical tests — Welch’s *t*-tests, point-biserial correlations, and one-way ANOVA with post-hoc Tukey HSD — to measure the strength and consistency of differences between human-composed and AI-generated piano excerpts. Welch’s *t*-test was chosen because it robustly handles unequal variances and unequal sample sizes between groups.  
+First, we used several univariate statistical tests, Welch’s *t*-tests, point-biserial correlations, and one-way ANOVA with post-hoc Tukey HSD, to measure the strength and consistency of differences between human-composed and AI-generated piano excerpts. Welch’s *t*-test was chosen because it robustly handles unequal variances and unequal sample sizes between groups.  
 
 While some features deviated from normality under Shapiro–Wilk tests, Welch’s *t*-test is robust to moderate non-normality, especially with balanced samples. Point-biserial correlations are reported as descriptive effect sizes rather than formal significance tests. Sensitivity checks with nonparametric Mann–Whitney U tests produced qualitatively similar results.  
 
-The point-biserial correlation, shown in @fig-pb**, quantified the strength of the linear relationship between each feature and the binary outcome (human or AI). The ANOVA (with Tukey post-hoc tests) confirmed statistically significant differences between group means while adjusting for multiple comparisons. @fig-meandiff** displays the standardized mean differences of the final features that were selected, and whether or not the means are higher in the AI or human-composed classes.
+The point-biserial correlation, shown in @fig-pb, quantified the strength of the linear relationship between each feature and the binary outcome (human or AI). The ANOVA (with Tukey post-hoc tests) confirmed statistically significant differences between group means while adjusting for multiple comparisons. @fig-meandiff displays the standardized mean differences of the final features that were selected, and whether or not the means are higher in the AI or human-composed classes.
 
-![Figure 1. Standardized mean differences (z-scores) between human and AI excerpts for the ten selected features, with bar colors indicating which class had the higher mean.](Visualizations/meandifbyfeature.png){#fig-meandiff width=600}
+![Standardized mean differences (z-scores) between human and AI excerpts for the ten selected features, with bar colors indicating which class had the higher mean.](Visualizations/meandifbyfeature.png){#fig-meandiff width=600}
 
-![Figure 2: Point-biserial correlations between each selected acoustic feature and the binary class label.](Visualizations/pointbiserial.png){#fig-pb width=600}
+![Point-biserial correlations between each selected acoustic feature and the binary class label.](Visualizations/pointbiserial.png){#fig-pb width=600}
 
-Next, we compared feature rankings from three complementary methods, as shown in @fig-featimp**. On the left, Cohen’s d quantifies each feature’s standardized effect size between human and AI clips, providing a model-agnostic measure of group differences. In the center, the absolute coefficients from an L1-penalized logistic regression pick out features with the strongest linear contributions to classification, enforcing sparsity to highlight only the most robust predictors. On the right, Random Forest Gini importance captures non-linear effects and interactions by measuring how much each feature reduces impurity across the ensemble’s decision trees. Including Cohen’s d alongside these model-based scores ensures we retain features that exhibit large, consistent differences in the raw data, even before any model fitting.
+Next, we compared feature rankings from three complementary methods, as shown in @fig-featimp. On the left, Cohen’s d quantifies each feature’s standardized effect size between human and AI clips, providing a model-agnostic measure of group differences. In the center, the absolute coefficients from an L1-penalized logistic regression pick out features with the strongest linear contributions to classification, enforcing sparsity to highlight only the most robust predictors. On the right, Random Forest Gini importance captures non-linear effects and interactions by measuring how much each feature reduces impurity across the ensemble’s decision trees. Including Cohen’s d alongside these model-based scores ensures we retain features that exhibit large, consistent differences in the raw data, even before any model fitting.
 Features were prioritized based on how consistently they ranked in the top 10 across multiple methods. However, it was important to keep in mind feature redundancy which we discuss in the next section.
 
 
-![Figure 3. Top ten acoustic descriptors selected from the full set of 58 features, ranked by Cohen’s d, logistic regression coefficients, and Random Forest Gini importance.](Visualizations/featureimportance.png){#fig-featimp width=600}
+![Top ten acoustic descriptors selected from the full set of 58 features, ranked by Cohen’s d, logistic regression coefficients, and Random Forest Gini importance.](Visualizations/featureimportance.png){#fig-featimp width=600}
 
 Three variables emerged as especially influential in distinguishing AI-generated from human performances. Spectral bandwidth, which reflects the range of frequencies present, tended to be narrower in human recordings, with a richer midrange produced by natural pedaling and touch. In contrast, AI clips often showed unnaturally extended highs and lows resulting from synthesis. Tempo variability captured natural fluctuations in timing, human performers frequently speed up or slow down for expressive effect, whereas AI outputs were more metronomic. Chroma balance, a measure of the evenness of pitch-class use, also differed between the two groups: human players often favored certain tonal centers or voicings, while AI tended toward a more uniform distribution across keys and harmonies.
 
@@ -106,15 +114,15 @@ A Chi-square test found no significant association between feature distribution 
 
 ## Assumption Checks: Normality, Variance Homogeneity, and Multicollinearity
 
-Before running parametric statistical tests such as Welch’s *t*-tests and ANOVA, we checked whether each feature met the assumptions of normality and equal variances between AI and human groups. Shapiro–Wilk tests indicated that all features deviated from normality in at least one group (*p* < 0.05), so we did not assume normally distributed data. We also ran Levene’s tests for homogeneity of variances, which showed that several key features — such as `spectral_bandwidth_mean`, `tempo_std`, and `mfcc_3_mean` — had significantly different variances between classes. These results reinforced our choice of Welch’s *t*-test, which is robust to both non-normality and unequal variances, for all hypothesis testing.
+Before running parametric statistical tests such as Welch’s *t*-tests and ANOVA, we checked whether each feature met the assumptions of normality and equal variances between AI and human groups. Shapiro–Wilk tests indicated that all features deviated from normality in at least one group (*p* < 0.05), so we did not assume normally distributed data. We also ran Levene’s tests for homogeneity of variances, which showed that several key features, such as `spectral_bandwidth_mean`, `tempo_std`, and `mfcc_3_mean`, had significantly different variances between classes. These results reinforced our choice of Welch’s *t*-test, which is robust to both non-normality and unequal variances, for all hypothesis testing.
 
 For the logistic regression model, we examined variance inflation factors (VIF) to assess multicollinearity among the ten final features. All VIF values were below the commonly used threshold of 5, indicating no problematic collinearity. This confirmed that each feature contributed unique information to the model and that coefficient estimates would remain stable and interpretable.
 
 ## Feature Redundancy Check and Final Selection Criteria
 
-To reduce multicollinearity and improve interpretability, we computed pairwise Pearson correlations (Figure @fig-corr) among all top-ranked features and enforced a threshold of |r| < 0.7, meaning no two selected features could be too closely correlated. The only exception was `spectral_bandwidth_mean` and `spectral_centroid_mean`, which were moderately correlated (*r* ≈ 0.73) but retained due to their distinct acoustic interpretations: bandwidth reflects spread of energy across frequencies, while centroid captures perceived brightness.
+To reduce multicollinearity and improve interpretability, we computed pairwise Pearson correlations (@fig-corr) among all top-ranked features and enforced a threshold of |r| < 0.7, meaning no two selected features could be too closely correlated. The only exception was `spectral_bandwidth_mean` and `spectral_centroid_mean`, which were moderately correlated (*r* ≈ 0.73) but retained due to their distinct acoustic interpretations: bandwidth reflects spread of energy across frequencies, while centroid captures perceived brightness.
 
-![Figure 4: Pairwise Pearson correlation heatmap for the ten final acoustic features.](Visualizations/corrheatmap.png){#fig-corr width=600}
+![Pairwise Pearson correlation heatmap for the ten final acoustic features.](Visualizations/corrheatmap.png){#fig-corr width=600}
 
 *Note.* Shows all off-diagonal correlations below 0.7 (except the one justified exception), confirming non-redundancy of the selected feature set.
 
@@ -124,7 +132,7 @@ This filtering step ensured that our final subset of ten acoustic features was b
 
 To further confirm that our selected features were not excessively collinear, we calculated Variance Inflation Factors (VIF) for each feature in the final set. VIF measures how much the variance of a regression coefficient is inflated due to multicollinearity with other predictors. A VIF of 1 indicates no correlation with other variables, while values above 5–10 are generally considered problematic.
 
-As shown in **Table 2**, all features had VIF values well below the threshold of 5, with most under 2, indicating minimal multicollinearity. This result supports our earlier Pearson correlation check (Figure @fig-corr) and provides additional assurance that each feature contributes unique information to the model without introducing instability into the coefficient estimates.
+As shown in Table 2, all features had VIF values well below the threshold of 5, with most under 2, indicating minimal multicollinearity. This result supports our earlier Pearson correlation check (@fig-corr) and provides additional assurance that each feature contributes unique information to the model without introducing instability into the coefficient estimates.
 
 **Table 2. Variance Inflation Factors for Final Features**
 
@@ -143,9 +151,9 @@ As shown in **Table 2**, all features had VIF values well below the threshold of
 
 ## Exploratory Visualization with Selected Features
 
-To gain intuition about the separability of human-performed versus AI-generated piano excerpts in our selected feature space, we projected the ten features into two dimensions using t-distributed Stochastic Neighbor Embedding (t-SNE). As shown in Figure @fig-tsne, each point represents a 30-second clip, colored yellow for humans and purple for AI.
+To gain intuition about the separability of human-performed versus AI-generated piano excerpts in our selected feature space, we projected the ten features into two dimensions using t-distributed Stochastic Neighbor Embedding (t-SNE). As shown in @fig-tsne, each point represents a 30-second clip, colored yellow for humans and purple for AI.
 
-![Figure 5: Two-dimensional t-SNE embedding of the ten selected acoustic features, with human-performed excerpts shown in yellow and AI-generated excerpts shown in purple.](Visualizations/t-sne.png){#fig-tsne width=600}
+![Two-dimensional t-SNE embedding of the ten selected acoustic features, with human-performed excerpts shown in yellow and AI-generated excerpts shown in purple.](Visualizations/t-sne.png){#fig-tsne width=600}
 
 *Note.* Human-performed excerpts are shown as yellow circles and AI-generated excerpts as purple circles. Pockets of yellow and purple illustrate regions where the acoustic signatures of human timing and timbre versus AI steadiness and spectral breadth tend to cluster.
 
@@ -175,7 +183,7 @@ Initial experiments with individual classifiers (logistic regression, random for
 | F1 Score   | 0.824 |
 | ROC-AUC    | 0.924 |
 
-![Figure 6: Confusion matrix for the stacking classifier on the 20% hold-out test set.](Visualizations/confusionmatrix.png){#fig-confmat width=400}
+![Confusion matrix for the stacking classifier on the 20% hold-out test set.](Visualizations/confusionmatrix.png){#fig-confmat width=400}
 
 *Note.* The top-left and bottom-right cells indicate correctly classified samples, while the off-diagonals show misclassifications.
 
@@ -195,7 +203,7 @@ Even so, test-set results remain strong, particularly the ROC–AUC of 0.924, wh
 
 The final stacking ensemble achieved 82.1% accuracy on the held-out test set, indicating that over four out of five excerpts were correctly classified as human or AI-generated. Precision was 0.803, meaning that when the model predicted an excerpt was AI-generated, it was correct about 80% of the time. Recall reached 0.847, showing that the model successfully identified roughly 85% of all AI-generated excerpts. The F1 score of 0.824 balances these precision and recall values, reflecting strong overall classification performance. The ROC-AUC of 0.924 indicates that, across all possible decision thresholds, the model ranks a randomly chosen AI excerpt higher than a randomly chosen human excerpt about 92.4% of the time, demonstrating excellent separability between the two classes.
 
-![Figure 7: Receiver operating characteristic (ROC) curve for the final stacking classifier, with AUC = 0.924 indicating strong discrimination between classes.](Visualizations/ROCcurve.png){#fig-roc width=600}
+![Receiver operating characteristic (ROC) curve for the final stacking classifier, with AUC = 0.924 indicating strong discrimination between classes.](Visualizations/ROCcurve.png){#fig-roc width=600}
 
 *Note.* The dotted diagonal line represents random guessing, and the model’s AUC = 0.924 indicates strong discrimination between human and AI excerpts.
 
@@ -203,9 +211,9 @@ Both classes had the same F1 score (0.82), and ROC-AUC was particularly informat
 
 ## Error Analysis
 
-To explore where the model was less certain, we reviewed the five most extreme misclassifications in each category. Figure @fig-tsne_errors shows the instances where the classification resulted in an AI-generated excerpt being incorrectly labeled as a human-composed excerpt (false positive) and where a human-composed excerpt was incorrectly labeled as AI-generated (false negative). 
+To explore where the model was less certain, we reviewed the five most extreme misclassifications in each category. @fig-tsne_errors shows the instances where the classification resulted in an AI-generated excerpt being incorrectly labeled as a human-composed excerpt (false positive) and where a human-composed excerpt was incorrectly labeled as AI-generated (false negative). 
 
-![Figure 8: t-SNE projection of test excerpts highlighting misclassified samples: red crosses are false positives, blue crosses are false negatives, and faint gray points are correctly classified samples.](Visualizations/erroranalysis.png){#fig-tsne_errors width=600}
+![t-SNE projection of test excerpts highlighting misclassified samples: red crosses are false positives, blue crosses are false negatives, and faint gray points are correctly classified samples.](Visualizations/erroranalysis.png){#fig-tsne_errors width=600}
 
 *Note.* Red crosses indicate false positives (human excerpts predicted as AI), blue crosses indicate false negatives (AI excerpts predicted as human), and faint gray points show correctly classified samples.
 
@@ -307,3 +315,4 @@ Schneider, L. (2025, May 19). AI music is more common – and harder to catch �
 University of York. (2023). AI-generated music inferior to human-composed music. *University of York*. <https://www.york.ac.uk/news-and-events/news/2023/research/ai-generated-music-inferior-to-human-composed/>
 
 Wikipedia contributors. (n.d.). Music and artificial intelligence. In *Wikipedia, The Free Encyclopedia*. Retrieved July 28, 2025, from <https://en.wikipedia.org/wiki/Music_and_artificial_intelligence>
+
