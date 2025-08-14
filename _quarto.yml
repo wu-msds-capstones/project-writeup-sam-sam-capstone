@@ -1,2 +1,21 @@
 project:
-  output-dir: _output
+  type: website
+  output-dir: .
+  render:
+    - index.qmd
+
+resources:
+  - Visualizations/**
+  - capstone_files/**
+  - index.qmd
+
+execute:
+  enabled: false
+
+format:
+  html:
+    toc: true
+    number-sections: true
+    theme:
+      light: lightly
+      dark: darkly
