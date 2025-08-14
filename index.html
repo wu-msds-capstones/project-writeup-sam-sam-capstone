@@ -284,10 +284,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#data-acquisition" id="toc-data-acquisition" class="nav-link" data-scroll-target="#data-acquisition"><span class="header-section-number">3.1</span> Data Acquisition</a></li>
   <li><a href="#data-processing" id="toc-data-processing" class="nav-link" data-scroll-target="#data-processing"><span class="header-section-number">3.2</span> Data Processing</a></li>
   <li><a href="#data-engineering" id="toc-data-engineering" class="nav-link" data-scroll-target="#data-engineering"><span class="header-section-number">3.3</span> Data Engineering</a></li>
-  <li><a href="#feature-selection-statistical-analysis" id="toc-feature-selection-statistical-analysis" class="nav-link" data-scroll-target="#feature-selection-statistical-analysis"><span class="header-section-number">3.4</span> Feature Selection &amp; Statistical Analysis</a>
-  <ul class="collapse">
-  <li><a href="#table-1.-features-used-in-the-final-model-and-their-definitions" id="toc-table-1.-features-used-in-the-final-model-and-their-definitions" class="nav-link" data-scroll-target="#table-1.-features-used-in-the-final-model-and-their-definitions"><span class="header-section-number">3.4.1</span> Table 1. Features used in the final model and their definitions</a></li>
-  </ul></li>
+  <li><a href="#feature-selection-statistical-analysis" id="toc-feature-selection-statistical-analysis" class="nav-link" data-scroll-target="#feature-selection-statistical-analysis"><span class="header-section-number">3.4</span> Feature Selection &amp; Statistical Analysis</a></li>
   <li><a href="#assumption-checks-normality-variance-homogeneity-and-multicollinearity" id="toc-assumption-checks-normality-variance-homogeneity-and-multicollinearity" class="nav-link" data-scroll-target="#assumption-checks-normality-variance-homogeneity-and-multicollinearity"><span class="header-section-number">3.5</span> Assumption Checks: Normality, Variance Homogeneity, and Multicollinearity</a></li>
   <li><a href="#feature-redundancy-check-and-final-selection-criteria" id="toc-feature-redundancy-check-and-final-selection-criteria" class="nav-link" data-scroll-target="#feature-redundancy-check-and-final-selection-criteria"><span class="header-section-number">3.6</span> Feature Redundancy Check and Final Selection Criteria</a></li>
   <li><a href="#variance-inflation-factor-vif-analysis" id="toc-variance-inflation-factor-vif-analysis" class="nav-link" data-scroll-target="#variance-inflation-factor-vif-analysis"><span class="header-section-number">3.7</span> Variance Inflation Factor (VIF) Analysis</a></li>
@@ -335,97 +332,55 @@ ul.task-list li input[type="checkbox"] {
 <h2 data-number="3.1" class="anchored" data-anchor-id="data-acquisition"><span class="header-section-number">3.1</span> Data Acquisition</h2>
 <p>Data for this project was gathered from multiple sources. The human-composed solo piano music was gathered from two different open source music archives including: Free Music Archive and Musopen. The AI-generated music was manually sourced by utilizing free web-based AI music generators: AIVA, Suno, Udio, Riffusion, and DeepAI.</p>
 <p>To ensure replicability, AI clips were generated using minimal, piano-only prompts such as “solo piano, only piano” and slight variations (e.g., “solo piano performance”, “classical solo piano”). These were chosen after pilot testing showed they produced the highest proportion of pure piano output without extra instrumentation.</p>
-<p>Pieces were included only if they met quality standards: - <strong>Instrument purity</strong> — no audible non-piano sounds. - <strong>Clarity</strong> — no distortion, clipping, or excessive background noise. - <strong>Adequate dynamic range</strong> — clear differences between soft and loud passages. - <strong>Sufficient volume</strong> — must normalize without introducing artifacts.</p>
+<p>Pieces were included only if they met quality standards:</p>
+<ul>
+<li><strong>Instrument purity</strong> — no audible non-piano sounds.<br>
+</li>
+<li><strong>Clarity</strong> — no distortion, clipping, or excessive background noise.<br>
+</li>
+<li><strong>Adequate dynamic range</strong> — clear differences between soft and loud passages.<br>
+</li>
+<li><strong>Sufficient volume</strong> — must normalize without introducing artifacts.</li>
+</ul>
 <p>This was important because spectral and harmonic features can be influenced by recording quality; setting strict criteria reduced the likelihood that observed differences were due to microphone, mixing, or mastering factors rather than performance or composition.</p>
 </section>
 <section id="data-processing" class="level2" data-number="3.2">
 <h2 data-number="3.2" class="anchored" data-anchor-id="data-processing"><span class="header-section-number">3.2</span> Data Processing</h2>
 <p>After downloading human and AI-generated solo piano pieces from their respective sources, several preprocessing steps were taken to prepare a consistent and balanced dataset. A Python script was utilized to standardize each audio file to mono 16-bit WAV format at 44.1 kHz sampling rate and normalized loudness to -23 LUFS, eliminating differences related to audio quality and loudness. To ensure sufficient sample size and balanced representation, especially since AI-generated pieces tended to be shorter, we randomly extracted up to four 30-second excerpts from each AI-generated track, and up to two excerpts from each human-performed track. These excerpts were selected by dividing each piece into non-overlapping excerpts and randomly sampling among them.</p>
-<p>From each excerpt, we extracted a variety of acoustic features covering four broad categories: - <strong>Spectral features</strong> capture the overall sound color or timbre of the piano, reflecting characteristics such as brightness and tonal complexity.<br>
-- <strong>Temporal features</strong> describe rhythmic and timing aspects, such as how consistently or expressively the performer maintains tempo.<br>
-- <strong>Harmonic features</strong> quantify the musical relationships between notes and chords, providing insights into the structural and tonal qualities of the music.<br>
-- <strong>Cepstral features</strong> represent subtle variations in sound texture, helping to distinguish nuanced differences in tone and articulation between human and AI performances.</p>
+<p>From each excerpt, we extracted a variety of acoustic features covering four broad categories:</p>
+<ul>
+<li><strong>Spectral features</strong> capture the overall sound color or timbre of the piano, reflecting characteristics such as brightness and tonal complexity.<br>
+</li>
+<li><strong>Temporal features</strong> describe rhythmic and timing aspects, such as how consistently or expressively the performer maintains tempo.<br>
+</li>
+<li><strong>Harmonic features</strong> quantify the musical relationships between notes and chords, providing insights into the structural and tonal qualities of the music.<br>
+</li>
+<li><strong>Cepstral features</strong> represent subtle variations in sound texture, helping to distinguish nuanced differences in tone and articulation between human and AI performances.</li>
+</ul>
 <p>Collectively, these acoustic features allowed us to systematically characterize the musical differences between human-performed and AI-generated piano excerpts. The resulting data set includes 58 acoustic features from a balanced number of 722 30-second excerpts, 361 of which were AI-generated excerpts and 361 of which were human-composed excerpts.</p>
 </section>
 <section id="data-engineering" class="level2" data-number="3.3">
 <h2 data-number="3.3" class="anchored" data-anchor-id="data-engineering"><span class="header-section-number">3.3</span> Data Engineering</h2>
 <p>We organized our dataset into three clearly defined tables, each stored separately to facilitate straightforward analysis without unnecessary merging.</p>
-<ul>
-<li>A <strong>metadata table</strong> was created to ensure traceability and reproducibility. Every audio excerpt was assigned a unique identifier, linking it consistently across tables and enabling accurate referencing of the original sources and associated features.</li>
-<li>The <strong>full dataset</strong> was generated directly by a Python script that extracted 58 acoustic features from each audio clip. This dataset preserved all raw features without alteration, providing a comprehensive view of each excerpt’s acoustic profile.</li>
-<li>Lastly, a <strong>streamlined final feature dataset</strong> was created, containing only the ten features identified as most predictive during feature selection. This reduced dataset served as the primary input for modeling, ensuring clarity, interpretability, and computational efficiency.</li>
-</ul>
+<p>A metadata table was created to ensure traceability and reproducibility. Every audio excerpt was assigned a unique identifier, linking it consistently across tables and enabling accurate referencing of the original sources and associated features.</p>
+<p>The full dataset was generated directly by a Python script that extracted 58 acoustic features from each audio clip. This dataset preserved all raw features without alteration, providing a comprehensive view of each excerpt’s acoustic profile.</p>
+<p>Lastly, a streamlined final feature dataset was created, containing only the ten features identified as most predictive during feature selection. This reduced dataset served as the primary input for modeling, ensuring clarity, interpretability, and computational efficiency.</p>
 </section>
 <section id="feature-selection-statistical-analysis" class="level2" data-number="3.4">
 <h2 data-number="3.4" class="anchored" data-anchor-id="feature-selection-statistical-analysis"><span class="header-section-number">3.4</span> Feature Selection &amp; Statistical Analysis</h2>
 <p>Used in the final models was a group of ten features. Table 1 provides an overview of these features and their definitions.</p>
-<section id="table-1.-features-used-in-the-final-model-and-their-definitions" class="level3" data-number="3.4.1">
-<h3 data-number="3.4.1" class="anchored" data-anchor-id="table-1.-features-used-in-the-final-model-and-their-definitions"><span class="header-section-number">3.4.1</span> Table 1. Features used in the final model and their definitions</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 70%">
-<col style="width: 29%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Feature Name</th>
-<th>Definition</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>spectral_bandwidth_mean</td>
-<td>How wide the sound is, from low to high; higher values often mean a brighter, more complex tone.</td>
-</tr>
-<tr class="even">
-<td>tempo_std</td>
-<td>How much the speed of the music varies; lower values mean steadier tempo, while higher values reflect more expressive or inconsistent timing.</td>
-</tr>
-<tr class="odd">
-<td>chroma_stft_mean</td>
-<td>Measures how often certain musical notes or chords show up; gives a sense of harmonic “color.”</td>
-</tr>
-<tr class="even">
-<td>onset_rate</td>
-<td>Counts how frequently new notes or sounds begin, like how “busy” or active the playing is.</td>
-</tr>
-<tr class="odd">
-<td>spectral_centroid_mean</td>
-<td>Where most of the sound energy is focused; higher values sound brighter, lower values sound darker.</td>
-</tr>
-<tr class="even">
-<td>mfcc_3_mean</td>
-<td>Captures details of tone and timbre, like a fingerprint of the sound texture.</td>
-</tr>
-<tr class="odd">
-<td>mfcc_5_mean</td>
-<td>Another layer of tonal detail; helps distinguish between human and machine playing styles.</td>
-</tr>
-<tr class="even">
-<td>tonnetz_3_mean</td>
-<td>Describes how chords and tones relate; tracks harmonic movement or tension.</td>
-</tr>
-<tr class="odd">
-<td>tonnetz_6_mean</td>
-<td>Also captures harmonic relationships, different from tonnetz_3 but similarly focused on musical structure.</td>
-</tr>
-<tr class="even">
-<td>mfcc_delta2_13_mean</td>
-<td>Tracks how the tonal texture changes over time; helps identify expressive or mechanical playing shifts.</td>
-</tr>
-</tbody>
-</table>
+<p>Table 1. Features used in the final model and their definitions | Feature Name | Definition | |—————————–|————| | spectral_bandwidth_mean | How wide the sound is, from low to high; higher values often mean a brighter, more complex tone. | | tempo_std | How much the speed of the music varies; lower values mean steadier tempo, while higher values reflect more expressive or inconsistent timing. | | chroma_stft_mean | Measures how often certain musical notes or chords show up; gives a sense of harmonic “color.” | | onset_rate | Counts how frequently new notes or sounds begin, like how “busy” or active the playing is. | | spectral_centroid_mean | Where most of the sound energy is focused; higher values sound brighter, lower values sound darker. | | mfcc_3_mean | Captures details of tone and timbre, like a fingerprint of the sound texture. | | mfcc_5_mean | Another layer of tonal detail; helps distinguish between human and machine playing styles. | | tonnetz_3_mean | Describes how chords and tones relate; tracks harmonic movement or tension. | | tonnetz_6_mean | Also captures harmonic relationships, different from tonnetz_3 but similarly focused on musical structure. | | mfcc_delta2_13_mean | Tracks how the tonal texture changes over time; helps identify expressive or mechanical playing shifts. |</p>
 <p>To identify a concise and informative subset of acoustic features, we employed an approach that combined statistical hypothesis testing and model-based importance rankings.</p>
-<p>First, we used several univariate statistical tests — Welch’s <em>t</em>-tests, point-biserial correlations, and one-way ANOVA with post-hoc Tukey HSD — to measure the strength and consistency of differences between human-composed and AI-generated piano excerpts. Welch’s <em>t</em>-test was chosen because it robustly handles unequal variances and unequal sample sizes between groups.</p>
+<p>First, we used several univariate statistical tests, Welch’s <em>t</em>-tests, point-biserial correlations, and one-way ANOVA with post-hoc Tukey HSD, to measure the strength and consistency of differences between human-composed and AI-generated piano excerpts. Welch’s <em>t</em>-test was chosen because it robustly handles unequal variances and unequal sample sizes between groups.</p>
 <p>While some features deviated from normality under Shapiro–Wilk tests, Welch’s <em>t</em>-test is robust to moderate non-normality, especially with balanced samples. Point-biserial correlations are reported as descriptive effect sizes rather than formal significance tests. Sensitivity checks with nonparametric Mann–Whitney U tests produced qualitatively similar results.</p>
-<p>The point-biserial correlation, shown in <a href="#fig-pb" class="quarto-xref">Figure&nbsp;2</a><strong>, quantified the strength of the linear relationship between each feature and the binary outcome (human or AI). The ANOVA (with Tukey post-hoc tests) confirmed statistically significant differences between group means while adjusting for multiple comparisons. <a href="#fig-meandiff" class="quarto-xref">Figure&nbsp;1</a></strong> displays the standardized mean differences of the final features that were selected, and whether or not the means are higher in the AI or human-composed classes.</p>
+<p>The point-biserial correlation, shown in <a href="#fig-pb" class="quarto-xref">Figure&nbsp;2</a>, quantified the strength of the linear relationship between each feature and the binary outcome (human or AI). The ANOVA (with Tukey post-hoc tests) confirmed statistically significant differences between group means while adjusting for multiple comparisons. <a href="#fig-meandiff" class="quarto-xref">Figure&nbsp;1</a> displays the standardized mean differences of the final features that were selected, and whether or not the means are higher in the AI or human-composed classes.</p>
 <div id="fig-meandiff" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-meandiff-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="Visualizations/meandifbyfeature.png" class="img-fluid figure-img" width="600">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-meandiff-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: Figure 1. Standardized mean differences (z-scores) between human and AI excerpts for the ten selected features, with bar colors indicating which class had the higher mean.
+Figure&nbsp;1: Standardized mean differences (z-scores) between human and AI excerpts for the ten selected features, with bar colors indicating which class had the higher mean.
 </figcaption>
 </figure>
 </div>
@@ -435,40 +390,39 @@ Figure&nbsp;1: Figure 1. Standardized mean differences (z-scores) between human 
 <img src="Visualizations/pointbiserial.png" class="img-fluid figure-img" width="600">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pb-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: Figure 2: Point-biserial correlations between each selected acoustic feature and the binary class label.
+Figure&nbsp;2: Point-biserial correlations between each selected acoustic feature and the binary class label.
 </figcaption>
 </figure>
 </div>
-<p>Next, we compared feature rankings from three complementary methods, as shown in <a href="#fig-featimp" class="quarto-xref">Figure&nbsp;3</a>**. On the left, Cohen’s d quantifies each feature’s standardized effect size between human and AI clips, providing a model-agnostic measure of group differences. In the center, the absolute coefficients from an L1-penalized logistic regression pick out features with the strongest linear contributions to classification, enforcing sparsity to highlight only the most robust predictors. On the right, Random Forest Gini importance captures non-linear effects and interactions by measuring how much each feature reduces impurity across the ensemble’s decision trees. Including Cohen’s d alongside these model-based scores ensures we retain features that exhibit large, consistent differences in the raw data, even before any model fitting. Features were prioritized based on how consistently they ranked in the top 10 across multiple methods. However, it was important to keep in mind feature redundancy which we discuss in the next section.</p>
+<p>Next, we compared feature rankings from three complementary methods, as shown in <a href="#fig-featimp" class="quarto-xref">Figure&nbsp;3</a>. On the left, Cohen’s d quantifies each feature’s standardized effect size between human and AI clips, providing a model-agnostic measure of group differences. In the center, the absolute coefficients from an L1-penalized logistic regression pick out features with the strongest linear contributions to classification, enforcing sparsity to highlight only the most robust predictors. On the right, Random Forest Gini importance captures non-linear effects and interactions by measuring how much each feature reduces impurity across the ensemble’s decision trees. Including Cohen’s d alongside these model-based scores ensures we retain features that exhibit large, consistent differences in the raw data, even before any model fitting. Features were prioritized based on how consistently they ranked in the top 10 across multiple methods. However, it was important to keep in mind feature redundancy which we discuss in the next section.</p>
 <div id="fig-featimp" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-featimp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="Visualizations/featureimportance.png" class="img-fluid figure-img" width="600">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-featimp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;3: Figure 3. Top ten acoustic descriptors selected from the full set of 58 features, ranked by Cohen’s d, logistic regression coefficients, and Random Forest Gini importance.
+Figure&nbsp;3: Top ten acoustic descriptors selected from the full set of 58 features, ranked by Cohen’s d, logistic regression coefficients, and Random Forest Gini importance.
 </figcaption>
 </figure>
 </div>
 <p>Three variables emerged as especially influential in distinguishing AI-generated from human performances. Spectral bandwidth, which reflects the range of frequencies present, tended to be narrower in human recordings, with a richer midrange produced by natural pedaling and touch. In contrast, AI clips often showed unnaturally extended highs and lows resulting from synthesis. Tempo variability captured natural fluctuations in timing, human performers frequently speed up or slow down for expressive effect, whereas AI outputs were more metronomic. Chroma balance, a measure of the evenness of pitch-class use, also differed between the two groups: human players often favored certain tonal centers or voicings, while AI tended toward a more uniform distribution across keys and harmonies.</p>
 <p>A Chi-square test found no significant association between feature distribution and generation platform (p &gt; 0.05), suggesting that differences are not platform-specific.</p>
 </section>
-</section>
 <section id="assumption-checks-normality-variance-homogeneity-and-multicollinearity" class="level2" data-number="3.5">
 <h2 data-number="3.5" class="anchored" data-anchor-id="assumption-checks-normality-variance-homogeneity-and-multicollinearity"><span class="header-section-number">3.5</span> Assumption Checks: Normality, Variance Homogeneity, and Multicollinearity</h2>
-<p>Before running parametric statistical tests such as Welch’s <em>t</em>-tests and ANOVA, we checked whether each feature met the assumptions of normality and equal variances between AI and human groups. Shapiro–Wilk tests indicated that all features deviated from normality in at least one group (<em>p</em> &lt; 0.05), so we did not assume normally distributed data. We also ran Levene’s tests for homogeneity of variances, which showed that several key features — such as <code>spectral_bandwidth_mean</code>, <code>tempo_std</code>, and <code>mfcc_3_mean</code> — had significantly different variances between classes. These results reinforced our choice of Welch’s <em>t</em>-test, which is robust to both non-normality and unequal variances, for all hypothesis testing.</p>
+<p>Before running parametric statistical tests such as Welch’s <em>t</em>-tests and ANOVA, we checked whether each feature met the assumptions of normality and equal variances between AI and human groups. Shapiro–Wilk tests indicated that all features deviated from normality in at least one group (<em>p</em> &lt; 0.05), so we did not assume normally distributed data. We also ran Levene’s tests for homogeneity of variances, which showed that several key features, such as <code>spectral_bandwidth_mean</code>, <code>tempo_std</code>, and <code>mfcc_3_mean</code>, had significantly different variances between classes. These results reinforced our choice of Welch’s <em>t</em>-test, which is robust to both non-normality and unequal variances, for all hypothesis testing.</p>
 <p>For the logistic regression model, we examined variance inflation factors (VIF) to assess multicollinearity among the ten final features. All VIF values were below the commonly used threshold of 5, indicating no problematic collinearity. This confirmed that each feature contributed unique information to the model and that coefficient estimates would remain stable and interpretable.</p>
 </section>
 <section id="feature-redundancy-check-and-final-selection-criteria" class="level2" data-number="3.6">
 <h2 data-number="3.6" class="anchored" data-anchor-id="feature-redundancy-check-and-final-selection-criteria"><span class="header-section-number">3.6</span> Feature Redundancy Check and Final Selection Criteria</h2>
-<p>To reduce multicollinearity and improve interpretability, we computed pairwise Pearson correlations (Figure <a href="#fig-corr" class="quarto-xref">Figure&nbsp;4</a>) among all top-ranked features and enforced a threshold of |r| &lt; 0.7, meaning no two selected features could be too closely correlated. The only exception was <code>spectral_bandwidth_mean</code> and <code>spectral_centroid_mean</code>, which were moderately correlated (<em>r</em> ≈ 0.73) but retained due to their distinct acoustic interpretations: bandwidth reflects spread of energy across frequencies, while centroid captures perceived brightness.</p>
+<p>To reduce multicollinearity and improve interpretability, we computed pairwise Pearson correlations (<a href="#fig-corr" class="quarto-xref">Figure&nbsp;4</a>) among all top-ranked features and enforced a threshold of |r| &lt; 0.7, meaning no two selected features could be too closely correlated. The only exception was <code>spectral_bandwidth_mean</code> and <code>spectral_centroid_mean</code>, which were moderately correlated (<em>r</em> ≈ 0.73) but retained due to their distinct acoustic interpretations: bandwidth reflects spread of energy across frequencies, while centroid captures perceived brightness.</p>
 <div id="fig-corr" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-corr-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="Visualizations/corrheatmap.png" class="img-fluid figure-img" width="600">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-corr-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;4: Figure 4: Pairwise Pearson correlation heatmap for the ten final acoustic features.
+Figure&nbsp;4: Pairwise Pearson correlation heatmap for the ten final acoustic features.
 </figcaption>
 </figure>
 </div>
@@ -478,7 +432,7 @@ Figure&nbsp;4: Figure 4: Pairwise Pearson correlation heatmap for the ten final 
 <section id="variance-inflation-factor-vif-analysis" class="level2" data-number="3.7">
 <h2 data-number="3.7" class="anchored" data-anchor-id="variance-inflation-factor-vif-analysis"><span class="header-section-number">3.7</span> Variance Inflation Factor (VIF) Analysis</h2>
 <p>To further confirm that our selected features were not excessively collinear, we calculated Variance Inflation Factors (VIF) for each feature in the final set. VIF measures how much the variance of a regression coefficient is inflated due to multicollinearity with other predictors. A VIF of 1 indicates no correlation with other variables, while values above 5–10 are generally considered problematic.</p>
-<p>As shown in <strong>Table 2</strong>, all features had VIF values well below the threshold of 5, with most under 2, indicating minimal multicollinearity. This result supports our earlier Pearson correlation check (Figure <a href="#fig-corr" class="quarto-xref">Figure&nbsp;4</a>) and provides additional assurance that each feature contributes unique information to the model without introducing instability into the coefficient estimates.</p>
+<p>As shown in Table 2, all features had VIF values well below the threshold of 5, with most under 2, indicating minimal multicollinearity. This result supports our earlier Pearson correlation check (<a href="#fig-corr" class="quarto-xref">Figure&nbsp;4</a>) and provides additional assurance that each feature contributes unique information to the model without introducing instability into the coefficient estimates.</p>
 <p><strong>Table 2. Variance Inflation Factors for Final Features</strong></p>
 <table class="caption-top table">
 <thead>
@@ -533,14 +487,14 @@ Figure&nbsp;4: Figure 4: Pairwise Pearson correlation heatmap for the ten final 
 </section>
 <section id="exploratory-visualization-with-selected-features" class="level2" data-number="3.8">
 <h2 data-number="3.8" class="anchored" data-anchor-id="exploratory-visualization-with-selected-features"><span class="header-section-number">3.8</span> Exploratory Visualization with Selected Features</h2>
-<p>To gain intuition about the separability of human-performed versus AI-generated piano excerpts in our selected feature space, we projected the ten features into two dimensions using t-distributed Stochastic Neighbor Embedding (t-SNE). As shown in Figure <a href="#fig-tsne" class="quarto-xref">Figure&nbsp;5</a>, each point represents a 30-second clip, colored yellow for humans and purple for AI.</p>
+<p>To gain intuition about the separability of human-performed versus AI-generated piano excerpts in our selected feature space, we projected the ten features into two dimensions using t-distributed Stochastic Neighbor Embedding (t-SNE). As shown in <a href="#fig-tsne" class="quarto-xref">Figure&nbsp;5</a>, each point represents a 30-second clip, colored yellow for humans and purple for AI.</p>
 <div id="fig-tsne" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-tsne-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="Visualizations/t-sne.png" class="img-fluid figure-img" width="600">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tsne-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;5: Figure 5: Two-dimensional t-SNE embedding of the ten selected acoustic features, with human-performed excerpts shown in yellow and AI-generated excerpts shown in purple.
+Figure&nbsp;5: Two-dimensional t-SNE embedding of the ten selected acoustic features, with human-performed excerpts shown in yellow and AI-generated excerpts shown in purple.
 </figcaption>
 </figure>
 </div>
@@ -597,7 +551,7 @@ Figure&nbsp;5: Figure 5: Two-dimensional t-SNE embedding of the ten selected aco
 <img src="Visualizations/confusionmatrix.png" class="img-fluid figure-img" width="400">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-confmat-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;6: Figure 6: Confusion matrix for the stacking classifier on the 20% hold-out test set.
+Figure&nbsp;6: Confusion matrix for the stacking classifier on the 20% hold-out test set.
 </figcaption>
 </figure>
 </div>
@@ -650,7 +604,7 @@ Figure&nbsp;6: Figure 6: Confusion matrix for the stacking classifier on the 20%
 <img src="Visualizations/ROCcurve.png" class="img-fluid figure-img" width="600">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-roc-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;7: Figure 7: Receiver operating characteristic (ROC) curve for the final stacking classifier, with AUC = 0.924 indicating strong discrimination between classes.
+Figure&nbsp;7: Receiver operating characteristic (ROC) curve for the final stacking classifier, with AUC = 0.924 indicating strong discrimination between classes.
 </figcaption>
 </figure>
 </div>
@@ -659,14 +613,14 @@ Figure&nbsp;7: Figure 7: Receiver operating characteristic (ROC) curve for the f
 </section>
 <section id="error-analysis" class="level2" data-number="4.5">
 <h2 data-number="4.5" class="anchored" data-anchor-id="error-analysis"><span class="header-section-number">4.5</span> Error Analysis</h2>
-<p>To explore where the model was less certain, we reviewed the five most extreme misclassifications in each category. Figure <a href="#fig-tsne_errors" class="quarto-xref">Figure&nbsp;8</a> shows the instances where the classification resulted in an AI-generated excerpt being incorrectly labeled as a human-composed excerpt (false positive) and where a human-composed excerpt was incorrectly labeled as AI-generated (false negative).</p>
+<p>To explore where the model was less certain, we reviewed the five most extreme misclassifications in each category. <a href="#fig-tsne_errors" class="quarto-xref">Figure&nbsp;8</a> shows the instances where the classification resulted in an AI-generated excerpt being incorrectly labeled as a human-composed excerpt (false positive) and where a human-composed excerpt was incorrectly labeled as AI-generated (false negative).</p>
 <div id="fig-tsne_errors" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-tsne_errors-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="Visualizations/erroranalysis.png" class="img-fluid figure-img" width="600">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-tsne_errors-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;8: Figure 8: t-SNE projection of test excerpts highlighting misclassified samples: red crosses are false positives, blue crosses are false negatives, and faint gray points are correctly classified samples.
+Figure&nbsp;8: t-SNE projection of test excerpts highlighting misclassified samples: red crosses are false positives, blue crosses are false negatives, and faint gray points are correctly classified samples.
 </figcaption>
 </figure>
 </div>
