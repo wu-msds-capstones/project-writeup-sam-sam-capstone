@@ -1,21 +1,12 @@
 project:
   type: website
   output-dir: .
-  render:
-    - index.qmd
-
-resources:
-  - Visualizations/**
-  - capstone_files/**
-  - index.qmd
-
+  render: [index.qmd]
 execute:
   enabled: false
-
 format:
   html:
     toc: true
     number-sections: true
-    theme:
-      light: lightly
-      dark: darkly
+    theme: cosmo
+    title-block-banner: false
