@@ -300,16 +300,16 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#model-evaluation" id="toc-model-evaluation" class="nav-link" data-scroll-target="#model-evaluation"><span class="header-section-number">4.3</span> Model Evaluation</a></li>
   <li><a href="#model-performance-and-generalization" id="toc-model-performance-and-generalization" class="nav-link" data-scroll-target="#model-performance-and-generalization"><span class="header-section-number">4.4</span> Model Performance and Generalization</a></li>
   <li><a href="#error-analysis" id="toc-error-analysis" class="nav-link" data-scroll-target="#error-analysis"><span class="header-section-number">4.5</span> Error Analysis</a></li>
-  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion"><span class="header-section-number">4.6</span> Discussion</a>
+  </ul></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion"><span class="header-section-number">5</span> Discussion</a>
   <ul class="collapse">
-  <li><a href="#acoustic-cues-of-humanness" id="toc-acoustic-cues-of-humanness" class="nav-link" data-scroll-target="#acoustic-cues-of-humanness"><span class="header-section-number">4.6.1</span> Acoustic Cues of “Humanness”</a></li>
-  <li><a href="#error-modes-and-model-boundaries" id="toc-error-modes-and-model-boundaries" class="nav-link" data-scroll-target="#error-modes-and-model-boundaries"><span class="header-section-number">4.6.2</span> Error Modes and Model Boundaries</a></li>
-  <li><a href="#data-ethics" id="toc-data-ethics" class="nav-link" data-scroll-target="#data-ethics"><span class="header-section-number">4.6.3</span> Data Ethics</a></li>
-  <li><a href="#directions-for-future-work" id="toc-directions-for-future-work" class="nav-link" data-scroll-target="#directions-for-future-work"><span class="header-section-number">4.6.4</span> Directions for Future Work</a></li>
+  <li><a href="#acoustic-cues-of-humanness" id="toc-acoustic-cues-of-humanness" class="nav-link" data-scroll-target="#acoustic-cues-of-humanness"><span class="header-section-number">5.1</span> Acoustic Cues of “Humanness”</a></li>
+  <li><a href="#error-modes-and-model-boundaries" id="toc-error-modes-and-model-boundaries" class="nav-link" data-scroll-target="#error-modes-and-model-boundaries"><span class="header-section-number">5.2</span> Error Modes and Model Boundaries</a></li>
+  <li><a href="#data-ethics" id="toc-data-ethics" class="nav-link" data-scroll-target="#data-ethics"><span class="header-section-number">5.3</span> Data Ethics</a></li>
+  <li><a href="#directions-for-future-work" id="toc-directions-for-future-work" class="nav-link" data-scroll-target="#directions-for-future-work"><span class="header-section-number">5.4</span> Directions for Future Work</a></li>
   </ul></li>
-  <li><a href="#appendix" id="toc-appendix" class="nav-link" data-scroll-target="#appendix"><span class="header-section-number">4.7</span> Appendix:</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">4.8</span> References</a></li>
-  </ul></li>
+  <li><a href="#appendix" id="toc-appendix" class="nav-link" data-scroll-target="#appendix"><span class="header-section-number">6</span> Appendix:</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">7</span> References</a></li>
   </ul>
 </nav>
     </div>
@@ -418,7 +418,7 @@ ul.task-list li input[type="checkbox"] {
 <p>To identify a concise and informative subset of acoustic features, we employed an approach that combined statistical hypothesis testing and model-based importance rankings.</p>
 <p>First, we used several univariate statistical tests — Welch’s <em>t</em>-tests, point-biserial correlations, and one-way ANOVA with post-hoc Tukey HSD — to measure the strength and consistency of differences between human-composed and AI-generated piano excerpts. Welch’s <em>t</em>-test was chosen because it robustly handles unequal variances and unequal sample sizes between groups.</p>
 <p>While some features deviated from normality under Shapiro–Wilk tests, Welch’s <em>t</em>-test is robust to moderate non-normality, especially with balanced samples. Point-biserial correlations are reported as descriptive effect sizes rather than formal significance tests. Sensitivity checks with nonparametric Mann–Whitney U tests produced qualitatively similar results.</p>
-<p>The point-biserial correlation, shown in <strong>Figure <a href="#fig-pb" class="quarto-xref">Figure&nbsp;2</a></strong>, quantified the strength of the linear relationship between each feature and the binary outcome (human or AI). The ANOVA (with Tukey post-hoc tests) confirmed statistically significant differences between group means while adjusting for multiple comparisons. <strong>Figure <a href="#fig-meandiff" class="quarto-xref">Figure&nbsp;1</a></strong> displays the standardized mean differences of the final features that were selected, and whether or not the means are higher in the AI or human-composed classes.</p>
+<p>The point-biserial correlation, shown in <a href="#fig-pb" class="quarto-xref">Figure&nbsp;2</a><strong>, quantified the strength of the linear relationship between each feature and the binary outcome (human or AI). The ANOVA (with Tukey post-hoc tests) confirmed statistically significant differences between group means while adjusting for multiple comparisons. <a href="#fig-meandiff" class="quarto-xref">Figure&nbsp;1</a></strong> displays the standardized mean differences of the final features that were selected, and whether or not the means are higher in the AI or human-composed classes.</p>
 <div id="fig-meandiff" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-meandiff-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -439,7 +439,7 @@ Figure&nbsp;2: Figure 2: Point-biserial correlations between each selected acous
 </figcaption>
 </figure>
 </div>
-<p>Next, we compared feature rankings from three complementary methods, as shown in <strong>Figure <a href="#fig-featimp" class="quarto-xref">Figure&nbsp;3</a></strong>. On the left, Cohen’s d quantifies each feature’s standardized effect size between human and AI clips, providing a model-agnostic measure of group differences. In the center, the absolute coefficients from an L1-penalized logistic regression pick out features with the strongest linear contributions to classification, enforcing sparsity to highlight only the most robust predictors. On the right, Random Forest Gini importance captures non-linear effects and interactions by measuring how much each feature reduces impurity across the ensemble’s decision trees. Including Cohen’s d alongside these model-based scores ensures we retain features that exhibit large, consistent differences in the raw data, even before any model fitting. Features were prioritized based on how consistently they ranked in the top 10 across multiple methods. However, it was important to keep in mind feature redundancy which we discuss in the next section.</p>
+<p>Next, we compared feature rankings from three complementary methods, as shown in <a href="#fig-featimp" class="quarto-xref">Figure&nbsp;3</a>**. On the left, Cohen’s d quantifies each feature’s standardized effect size between human and AI clips, providing a model-agnostic measure of group differences. In the center, the absolute coefficients from an L1-penalized logistic regression pick out features with the strongest linear contributions to classification, enforcing sparsity to highlight only the most robust predictors. On the right, Random Forest Gini importance captures non-linear effects and interactions by measuring how much each feature reduces impurity across the ensemble’s decision trees. Including Cohen’s d alongside these model-based scores ensures we retain features that exhibit large, consistent differences in the raw data, even before any model fitting. Features were prioritized based on how consistently they ranked in the top 10 across multiple methods. However, it was important to keep in mind feature redundancy which we discuss in the next section.</p>
 <div id="fig-featimp" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-featimp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -674,33 +674,34 @@ Figure&nbsp;8: Figure 8: t-SNE projection of test excerpts highlighting misclass
 <p>Some AI excerpts had a bright, wide sound but fewer timing changes, suggesting the model sometimes relied more on rhythm than tone. A few human excerpts kept an unusually steady tempo or had a balanced mix of notes, making them sound more like AI pieces. Overall, the stacking model was good at telling human and AI piano apart, but certain playing styles made the line between them less clear.</p>
 <p><strong>Platform effects.</strong> A chi-square test found no significant association between platform and label prevalence (<em>p</em> &gt; 0.05), but Suno clips showed visually tight clusters and contributed many extremes in spectral bandwidth and onset rate in the outlier screen. This suggests stylistic/production tendencies can influence where clips appear in feature space even when label balance across platforms is not biased.</p>
 </section>
-<section id="discussion" class="level2" data-number="4.6">
-<h2 data-number="4.6" class="anchored" data-anchor-id="discussion"><span class="header-section-number">4.6</span> Discussion</h2>
+</section>
+<section id="discussion" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Discussion</h1>
 <p>In this work, we developed a transparent, feature-based pipeline to distinguish 30-second solo piano excerpts as human-composed or AI-generated. By starting with a balanced dataset of 722 excerpts and extracting 55 acoustic descriptors, we used statistical tests and model-based rankings to hone in on a non-redundant set of ten features. Our enhanced stacking ensemble, combining calibrated logistic regression, random forest, gradient boosting, and naïve Bayes with interaction terms, achieved 82.1 % accuracy (0.924 ROC-AUC) on held-out data. While these results are encouraging, our primary goal is to illuminate which acoustic cues reliably signal “humanness” in piano performance.</p>
-<section id="acoustic-cues-of-humanness" class="level3" data-number="4.6.1">
-<h3 data-number="4.6.1" class="anchored" data-anchor-id="acoustic-cues-of-humanness"><span class="header-section-number">4.6.1</span> Acoustic Cues of “Humanness”</h3>
+<section id="acoustic-cues-of-humanness" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="acoustic-cues-of-humanness"><span class="header-section-number">5.1</span> Acoustic Cues of “Humanness”</h2>
 <p>Three main features stood out as the most useful for telling human and AI piano apart. Spectral bandwidth measures how sound energy is spread across low and high pitches. Human pianists often create a balance between brightness and warmth, while AI pieces sometimes sound either too bright or too flat. Tempo variability tracks how much the speed changes during a performance. Human players naturally slow down or speed up slightly for expression, while AI pieces tend to keep a steady beat. Chroma balance looks at how evenly different notes and chords are used. Humans often vary chord shapes and emphasize certain tones in a way that feels more natural and emotional, while AI outputs can sound more uniform. Together, these features capture differences in tone, rhythm, and harmony that often make human performances feel more expressive.</p>
 </section>
-<section id="error-modes-and-model-boundaries" class="level3" data-number="4.6.2">
-<h3 data-number="4.6.2" class="anchored" data-anchor-id="error-modes-and-model-boundaries"><span class="header-section-number">4.6.2</span> Error Modes and Model Boundaries</h3>
+<section id="error-modes-and-model-boundaries" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="error-modes-and-model-boundaries"><span class="header-section-number">5.2</span> Error Modes and Model Boundaries</h2>
 <p>We found two main ways the model made mistakes. Some AI pieces, even though they were computer-generated, had a loose, human-like timing pattern (similar to rubato) but also very bright, wide-ranging tones. These fooled the model into thinking they were human, which suggests the model sometimes focuses more on timing than tone. On the other hand, some human performances were so steady in tempo and so average in harmonic balance that they came across as mechanical, leading the model to label them as AI. In short, very “human-like” AI playing and very “machine-like” human playing were the trouble spots. These cases suggest the model might do better if it could also pick up on other cues, like how the sustain pedal is used or finer details of timing changes.</p>
 </section>
-<section id="data-ethics" class="level3" data-number="4.6.3">
-<h3 data-number="4.6.3" class="anchored" data-anchor-id="data-ethics"><span class="header-section-number">4.6.3</span> Data Ethics</h3>
+<section id="data-ethics" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="data-ethics"><span class="header-section-number">5.3</span> Data Ethics</h2>
 <p>This project has several limitations and ethical considerations that should be acknowledged. Our human recordings were drawn from public-domain sources (FMA, Musopen) under clear licensing terms, but these archives do not fully capture the range of piano styles, traditions, or performer backgrounds. As a result, the model may reflect biases if applied to music outside this narrow scope.</p>
 <p>There is also a risk of misclassification. Incorrectly labeling a human performance as AI-generated could unfairly affect an artist’s reputation, while missing AI-generated content could allow for misuse or misattribution. For this reason, any automated predictions should be treated as preliminary, ideally accompanied by confidence scores and, when possible, reviewed by human listeners.</p>
 <p>Publishing the specific acoustic patterns that distinguish our dataset’s human and AI recordings could enable future AI systems to imitate these patterns more effectively, reducing the effectiveness of static detectors. Detection tools will likely need ongoing updates, external review, and collaborative oversight to remain reliable.</p>
 <p>Finally, some commercial AI music platforms, including Suno and AIVA, have been criticized for producing works that closely resemble human artists’ styles. If these systems are trained on copyrighted material, their outputs could raise questions around intellectual property and fair use.</p>
 </section>
-<section id="directions-for-future-work" class="level3" data-number="4.6.4">
-<h3 data-number="4.6.4" class="anchored" data-anchor-id="directions-for-future-work"><span class="header-section-number">4.6.4</span> Directions for Future Work</h3>
+<section id="directions-for-future-work" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="directions-for-future-work"><span class="header-section-number">5.4</span> Directions for Future Work</h2>
 <p>To broaden applicability, future studies should incorporate MIDI/symbolic data for note-level analysis (voice-leading, chord progressions) alongside audio features. Enhancing temporal modeling with metrics like onset-interval autocorrelation or beat-synchronous energy flows could improve sensitivity to expressive phrasing. Hybrid approaches that integrate interpretable features with lightweight neural embeddings (e.g., timbral autoencoders) may capture subtler spectral artifacts. Finally, evaluating the pipeline on unseen AI systems and “in-the-wild” streaming data, using nested cross-validation to guard against overfitting, will be critical for real-world deployment.</p>
 <p>By clearly identifying which acoustic characteristics drive classification and acknowledging both technical and ethical challenges, we offer a replicable foundation for ongoing work in automated AI-music detection, helping to support listener trust and fair recognition of human artistry.</p>
 <hr>
 </section>
 </section>
-<section id="appendix" class="level2" data-number="4.7">
-<h2 data-number="4.7" class="anchored" data-anchor-id="appendix"><span class="header-section-number">4.7</span> Appendix:</h2>
+<section id="appendix" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Appendix:</h1>
 <p><strong>Table A1.</strong> Detailed feature values for the top five false positives (human excerpts mislabeled as AI) in the hold-out test set. Each row lists the excerpt index, key acoustic feature measurements, and the true versus predicted labels.</p>
 <table class="caption-top table">
 <colgroup>
@@ -981,25 +982,24 @@ Figure&nbsp;8: Figure 8: t-SNE projection of test excerpts highlighting misclass
 </tbody>
 </table>
 </section>
-<section id="references" class="level2" data-number="4.8">
-<h2 data-number="4.8" class="anchored" data-anchor-id="references"><span class="header-section-number">4.8</span> References</h2>
-<p>Afchar, D., Issam, W., &amp; Prévost, C. (2025). Detecting generative AI in music: First public AI-music detector and its challenges. arXiv. https://arxiv.org/html/2501.10111v1</p>
-<p>Barlow, G. (2025, July 3). Apple and Spotify are sleepwalking into an AI music crisis – and The Velvet Sundown mess shows they need to act fast. TechRadar. https://www.techradar.com/computing/artificial-intelligence/apple-and-spotify-are-sleepwalking-into-an-ai-music-crisis-and-the-velvet-sundown-mess-shows-they-need-to-act-fast?utm_source=chatgpt.com</p>
-<p>Beck, E. (2025, July 8). A ’60s-flavored band blew up on Spotify. They’re AI. The Washington Post. https://www.washingtonpost.com/entertainment/music/2025/07/08/velvet-sundown-artificial-intelligence-spotify/</p>
-<p>Dervakos, E., Filandrianos, G., &amp; Stamou, G. (2021). Heuristics for evaluation of AI-generated music [Poster]. ICPR 2021. https://ailb-web.ing.unimore.it/icpr/media/posters/11986.pdf</p>
-<p>Flexer, A., Schnitzer, D., &amp; Widmer, G. (2006). Combination of spectral and rhythmic similarity feature spaces for music classification (OeFAI TR-2006-09). Austrian Research Institute for Artificial Intelligence. https://ofai.at/papers/oefai-tr-2006-09.pdf</p>
-<p>Misra, S. (2022). An AI model to differentiate AI-generated music from human-composed music [Independent Project Mentorship]. https://independent-project-mentorship.netlify.app/assets/pdfs/2ededfe6e527c0b86f86b57d56647c1400ba9a27.pdf</p>
-<p>MusicAlly. (2025, July 8). Key quotes from Michael Nash’s keynote at the AI for Good Global Summit. https://musically.com/2025/07/08/umgs-michael-nash-ai-can-be-fundamental-to-the-future-of-music/</p>
-<p>Noh, M., &amp; Kim, C. (2025). Harmony and personality: Analyzing connections between AI-generated music preference and personal traits. Nursing and Healthcare Science Journal. https://nhsjs.com/2025/harmony-and-personality-analyzing-connections-between-ai-generated-music-preference-and-personal-traits/</p>
-<p>Press-Reynolds, E. (2025, July 2). How AI wreaked havoc on the lo-fi beat scene. Pitchfork. https://pitchfork.com/thepitch/how-ai-wreaked-havoc-on-the-lo-fi-beat-scene/?utm_source=chatgpt.com</p>
-<p>Reuters. (2025, July 8). Resurgence of music securitization attracts investors, but emerging risks like AI remain considerations. Reuters. https://www.reuters.com/legal/legalindustry/resurgence-music-securitization-issuer-investor-appeal-data-driven-era-2025-07-08/</p>
-<p>Sarmento, P., Loth, J., &amp; Barthet, M. (2024). Between the AI and Me: Analysing listeners’ perspectives on AI- and human-composed progressive metal music. arXiv. https://arxiv.org/abs/2407.21615</p>
-<p>Schneider, L. (2025, May 19). AI music is more common – and harder to catch – than ever. Scienceline. https://scienceline.org/2025/05/ai-music-is-more-common-and-harder-to-catch-than-ever/</p>
-<p>University of York. (2023). AI-generated music inferior to human-composed music. University of York. https://www.york.ac.uk/news-and-events/news/2023/research/ai-generated-music-inferior-to-human-composed/</p>
-<p>Wikipedia contributors. (n.d.). Music and artificial intelligence. In Wikipedia, The Free Encyclopedia. Retrieved July 28, 2025, from https://en.wikipedia.org/wiki/Music_and_artificial_intelligence</p>
+<section id="references" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> References</h1>
+<p>Afchar, D., Issam, W., &amp; Prévost, C. (2025). Detecting generative AI in music: First public AI-music detector and its challenges. <em>arXiv</em>. <a href="https://arxiv.org/html/2501.10111v1" class="uri">https://arxiv.org/html/2501.10111v1</a></p>
+<p>Barlow, G. (2025, July 3). Apple and Spotify are sleepwalking into an AI music crisis – and The Velvet Sundown mess shows they need to act fast. <em>TechRadar</em>. <a href="https://www.techradar.com/computing/artificial-intelligence/apple-and-spotify-are-sleepwalking-into-an-ai-music-crisis-and-the-velvet-sundown-mess-shows-they-need-to-act-fast?utm_source=chatgpt.com" class="uri">https://www.techradar.com/computing/artificial-intelligence/apple-and-spotify-are-sleepwalking-into-an-ai-music-crisis-and-the-velvet-sundown-mess-shows-they-need-to-act-fast?utm_source=chatgpt.com</a></p>
+<p>Beck, E. (2025, July 8). A ’60s-flavored band blew up on Spotify. They’re AI. <em>The Washington Post</em>. <a href="https://www.washingtonpost.com/entertainment/music/2025/07/08/velvet-sundown-artificial-intelligence-spotify/" class="uri">https://www.washingtonpost.com/entertainment/music/2025/07/08/velvet-sundown-artificial-intelligence-spotify/</a></p>
+<p>Dervakos, E., Filandrianos, G., &amp; Stamou, G. (2021). Heuristics for evaluation of AI-generated music [Poster]. <em>ICPR 2021</em>. <a href="https://ailb-web.ing.unimore.it/icpr/media/posters/11986.pdf" class="uri">https://ailb-web.ing.unimore.it/icpr/media/posters/11986.pdf</a></p>
+<p>Flexer, A., Schnitzer, D., &amp; Widmer, G. (2006). Combination of spectral and rhythmic similarity feature spaces for music classification (OeFAI TR-2006-09). <em>Austrian Research Institute for Artificial Intelligence</em>. <a href="https://ofai.at/papers/oefai-tr-2006-09.pdf" class="uri">https://ofai.at/papers/oefai-tr-2006-09.pdf</a></p>
+<p>Misra, S. (2022). An AI model to differentiate AI-generated music from human-composed music [Independent Project Mentorship]. <a href="https://independent-project-mentorship.netlify.app/assets/pdfs/2ededfe6e527c0b86f86b57d56647c1400ba9a27.pdf" class="uri">https://independent-project-mentorship.netlify.app/assets/pdfs/2ededfe6e527c0b86f86b57d56647c1400ba9a27.pdf</a></p>
+<p>MusicAlly. (2025, July 8). Key quotes from Michael Nash’s keynote at the AI for Good Global Summit. <a href="https://musically.com/2025/07/08/umgs-michael-nash-ai-can-be-fundamental-to-the-future-of-music/" class="uri">https://musically.com/2025/07/08/umgs-michael-nash-ai-can-be-fundamental-to-the-future-of-music/</a></p>
+<p>Noh, M., &amp; Kim, C. (2025). Harmony and personality: Analyzing connections between AI-generated music preference and personal traits. <em>Nursing and Healthcare Science Journal</em>. <a href="https://nhsjs.com/2025/harmony-and-personality-analyzing-connections-between-ai-generated-music-preference-and-personal-traits/" class="uri">https://nhsjs.com/2025/harmony-and-personality-analyzing-connections-between-ai-generated-music-preference-and-personal-traits/</a></p>
+<p>Press-Reynolds, E. (2025, July 2). How AI wreaked havoc on the lo-fi beat scene. <em>Pitchfork</em>. <a href="https://pitchfork.com/thepitch/how-ai-wreaked-havoc-on-the-lo-fi-beat-scene/?utm_source=chatgpt.com" class="uri">https://pitchfork.com/thepitch/how-ai-wreaked-havoc-on-the-lo-fi-beat-scene/?utm_source=chatgpt.com</a></p>
+<p>Reuters. (2025, July 8). Resurgence of music securitization attracts investors, but emerging risks like AI remain considerations. <em>Reuters</em>. <a href="https://www.reuters.com/legal/legalindustry/resurgence-music-securitization-issuer-investor-appeal-data-driven-era-2025-07-08/" class="uri">https://www.reuters.com/legal/legalindustry/resurgence-music-securitization-issuer-investor-appeal-data-driven-era-2025-07-08/</a></p>
+<p>Sarmento, P., Loth, J., &amp; Barthet, M. (2024). Between the AI and Me: Analysing listeners’ perspectives on AI- and human-composed progressive metal music. <em>arXiv</em>. <a href="https://arxiv.org/abs/2407.21615" class="uri">https://arxiv.org/abs/2407.21615</a></p>
+<p>Schneider, L. (2025, May 19). AI music is more common – and harder to catch – than ever. <em>Scienceline</em>. <a href="https://scienceline.org/2025/05/ai-music-is-more-common-and-harder-to-catch-than-ever/" class="uri">https://scienceline.org/2025/05/ai-music-is-more-common-and-harder-to-catch-than-ever/</a></p>
+<p>University of York. (2023). AI-generated music inferior to human-composed music. <em>University of York</em>. <a href="https://www.york.ac.uk/news-and-events/news/2023/research/ai-generated-music-inferior-to-human-composed/" class="uri">https://www.york.ac.uk/news-and-events/news/2023/research/ai-generated-music-inferior-to-human-composed/</a></p>
+<p>Wikipedia contributors. (n.d.). Music and artificial intelligence. In <em>Wikipedia, The Free Encyclopedia</em>. Retrieved July 28, 2025, from <a href="https://en.wikipedia.org/wiki/Music_and_artificial_intelligence" class="uri">https://en.wikipedia.org/wiki/Music_and_artificial_intelligence</a></p>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
