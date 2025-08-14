@@ -76,7 +76,7 @@ Lastly, a streamlined final feature dataset was created, containing only the ten
 ## Feature Selection & Statistical Analysis
 Used in the final models was a group of ten features. Table 1 provides an overview of these features and their definitions.
 
-Table 1. Features used in the final model and their definitions
+### Table 1. Features used in the final model and their definitions
 | Feature Name                | Definition |
 |-----------------------------|------------|
 | spectral_bandwidth_mean     | How wide the sound is, from low to high; higher values often mean a brighter, more complex tone. |
@@ -315,4 +315,5 @@ Schneider, L. (2025, May 19). AI music is more common â€“ and harder to catch â€
 University of York. (2023). AI-generated music inferior to human-composed music. *University of York*. <https://www.york.ac.uk/news-and-events/news/2023/research/ai-generated-music-inferior-to-human-composed/>
 
 Wikipedia contributors. (n.d.). Music and artificial intelligence. In *Wikipedia, The Free Encyclopedia*. Retrieved July 28, 2025, from <https://en.wikipedia.org/wiki/Music_and_artificial_intelligence>
+
 
